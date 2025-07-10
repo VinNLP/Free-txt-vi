@@ -26,3 +26,8 @@ setup:
 
 api-run:
 	${API_COMPOSE} sh -c 'python runner/main.py'
+
+node-setup:
+	nvm use 20
+web-run:
+	cd web && yarn dev
