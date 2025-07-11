@@ -11,3 +11,11 @@ services:
       - MODEL_SUM_PATH=/models/qwen2.5-0.5b-instruct
       - MODEL_SENTIMENT_PATH=/models/multilingual-sentiment-analysis
       - JVM_PATH=/usr/lib/jvm/default-java/lib/server/libjvm.so
+  
+  web:
+    build:
+      context: ../..
+      dockerfile: build/web.Dockerfile
+    container_name: ${PROJECT_NAME}-web
+    ports:
+      - "3000:80"
