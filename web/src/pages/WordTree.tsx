@@ -1,7 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { TreePine, Loader2, Search } from 'lucide-react';
 import { apiService, type WordTreeResponse } from '../services/api';
 import Tree from 'react-d3-tree';
+import { ForceDirectedWordTree } from '../components/ForceDirectedWordTree';
+import type { ForceDirectedWordTreeHandle } from '../components/ForceDirectedWordTree';
+import type { Tree as TreeType } from 'react-d3-tree';
 
 // Convert backend nested dict to react-d3-tree format
 function convertToD3Tree(node: unknown, maxLevel = 3, level = 0): any[] {
@@ -30,6 +33,9 @@ export function WordTree() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
+
+    const treeRef = useRef<any>(null); // react-d3-tree does not export a proper type for ref
+    const forceRef = useRef<ForceDirectedWordTreeHandle>(null);
 
     const handleGenerateTree = async () => {
         if (!text.trim()) {
@@ -146,7 +152,7 @@ export function WordTree() {
                             id="text"
                             rows={6}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Enter Vietnamese text here..."
+                            placeholder="Enter text here..."
                             value={text}
                             onChange={(e) => setText(e.target.value)}
                         />
@@ -198,7 +204,22 @@ export function WordTree() {
                         Word Tree for "{treeData.word}"
                     </h2>
                     <div style={{ width: '100%', height: '800px' }}>
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-lg font-semibold">Tree Layout</h3>
+                            <button
+                                type="button"
+                                className="px-3 py-1 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                onClick={() => {
+                                    if (treeRef.current && treeRef.current.zoom) {
+                                        treeRef.current.zoom(1, { x: 500, y: 400 });
+                                    }
+                                }}
+                            >
+                                Reset Layout
+                            </button>
+                        </div>
                         <Tree
+                            ref={treeRef}
                             data={d3TreeData}
                             orientation="horizontal"
                             translate={{ x: 500, y: 400 }}
@@ -227,6 +248,34 @@ export function WordTree() {
                                 {tooltip.text}
                             </div>
                         )}
+                    </div>
+                    <div style={{ height: 40 }} />
+                    <div style={{ width: '100%', height: '800px' }}>
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-lg font-semibold">Force-Directed Graph</h3>
+                            <button
+                                type="button"
+                                className="px-3 py-1 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                onClick={() => forceRef.current?.reset()}
+                            >
+                                Reset Layout
+                            </button>
+                        </div>
+                        <div className="flex items-center gap-6 mb-4">
+                            <span className="flex items-center gap-1">
+                                <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', background: '#2563eb', border: '2px solid #2563eb' }}></span>
+                                <span className="ml-1 text-gray-800">Keyword/Root</span>
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', background: '#f59e42', border: '2px solid #f59e42' }}></span>
+                                <span className="ml-1 text-gray-800">Left Context</span>
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', background: '#10b981', border: '2px solid #10b981' }}></span>
+                                <span className="ml-1 text-gray-800">Right Context</span>
+                            </span>
+                        </div>
+                        <ForceDirectedWordTree ref={forceRef} treeData={treeData} width={800} height={700} />
                     </div>
                 </div>
             )}

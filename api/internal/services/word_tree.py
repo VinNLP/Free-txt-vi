@@ -1,6 +1,7 @@
 import py_vncorenlp
 from collections import defaultdict
 from typing import List, Dict
+import string
 
 
 class WordTreeNode:
@@ -39,11 +40,16 @@ class WordTree:
         tokens = mod_text.split()
         left_tree = WordTreeNode()
         right_tree = WordTreeNode()
+        punctuation = set(string.punctuation)
 
         for i, token in enumerate(tokens):
             if token == seg_keyword:
                 left_context = tokens[max(0, i - window) : i][::-1]
                 right_context = tokens[i + 1 : i + 1 + window]
+
+                # Remove punctuation from context
+                left_context = [w for w in left_context if w not in punctuation]
+                right_context = [w for w in right_context if w not in punctuation]
 
                 if left_context:
                     left_tree.insert(left_context)
