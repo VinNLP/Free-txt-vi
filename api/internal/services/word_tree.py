@@ -34,8 +34,8 @@ class WordTree:
         )
 
     async def build_word_tree(self, text: str, keyword: str, window: int = 5):
-        seg_text = self.model.word_segment(text)
-        seg_keyword = "".join(self.model.word_segment(keyword))
+        seg_text = self.model.word_segment(text.lower())
+        seg_keyword = "".join(self.model.word_segment(keyword.lower()))
         mod_text = " ".join(seg_text)
         tokens = mod_text.split()
         left_tree = WordTreeNode()

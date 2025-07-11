@@ -4,7 +4,6 @@ import { apiService, type WordTreeResponse } from '../services/api';
 import Tree from 'react-d3-tree';
 import { ForceDirectedWordTree } from '../components/ForceDirectedWordTree';
 import type { ForceDirectedWordTreeHandle } from '../components/ForceDirectedWordTree';
-import type { Tree as TreeType } from 'react-d3-tree';
 
 // Convert backend nested dict to react-d3-tree format
 function convertToD3Tree(node: unknown, maxLevel = 3, level = 0): any[] {
@@ -34,7 +33,6 @@ export function WordTree() {
     const [error, setError] = useState('');
     const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
 
-    const treeRef = useRef<any>(null); // react-d3-tree does not export a proper type for ref
     const forceRef = useRef<ForceDirectedWordTreeHandle>(null);
 
     const handleGenerateTree = async () => {
@@ -152,7 +150,7 @@ export function WordTree() {
                             id="text"
                             rows={6}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Enter text here..."
+                            placeholder="Enter Vietnamese text here..."
                             value={text}
                             onChange={(e) => setText(e.target.value)}
                         />
@@ -204,22 +202,8 @@ export function WordTree() {
                         Word Tree for "{treeData.word}"
                     </h2>
                     <div style={{ width: '100%', height: '800px' }}>
-                        <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-lg font-semibold">Tree Layout</h3>
-                            <button
-                                type="button"
-                                className="px-3 py-1 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                onClick={() => {
-                                    if (treeRef.current && treeRef.current.zoom) {
-                                        treeRef.current.zoom(1, { x: 500, y: 400 });
-                                    }
-                                }}
-                            >
-                                Reset Layout
-                            </button>
-                        </div>
+                        <h3 className="text-lg font-semibold mb-2">Tree Layout</h3>
                         <Tree
-                            ref={treeRef}
                             data={d3TreeData}
                             orientation="horizontal"
                             translate={{ x: 500, y: 400 }}
