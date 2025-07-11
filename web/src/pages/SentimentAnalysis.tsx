@@ -12,6 +12,7 @@ import {
     BarElement,
     Title,
 } from 'chart.js';
+import type { TooltipItem } from 'chart.js';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
@@ -84,6 +85,26 @@ export function SentimentAnalysis() {
                 borderWidth: 1,
             },
         ],
+    }), [sentimentCounts]);
+
+    // Pie chart options with percentage in tooltip
+    const pieOptions = useMemo(() => ({
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function (context: TooltipItem<'pie'>) {
+                        const label = context.label || '';
+                        const value = context.parsed || 0;
+                        const data = context.chart.data.datasets[0].data as number[];
+                        const total = data.reduce((sum: number, v: number) => sum + v, 0);
+                        const percent = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                        return `${label}: ${value} (${percent}%)`;
+                    }
+                }
+            },
+            legend: { display: true },
+            title: { display: false },
+        },
     }), [sentimentCounts]);
 
     // Bar chart data
@@ -171,7 +192,7 @@ export function SentimentAnalysis() {
                             id="text"
                             rows={6}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Enter Vietnamese text here..."
+                            placeholder="Enter text here..."
                             value={text}
                             onChange={(e) => setText(e.target.value)}
                         />
@@ -207,7 +228,7 @@ export function SentimentAnalysis() {
                         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex flex-col items-center">
                             <h3 className="text-lg font-semibold mb-2">Sentiment Distribution (Pie)</h3>
                             <div className="w-full max-w-xs">
-                                <Pie data={pieData} />
+                                <Pie data={pieData} options={pieOptions} />
                             </div>
                         </div>
                         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex flex-col items-center">

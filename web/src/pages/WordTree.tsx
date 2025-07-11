@@ -1,7 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { TreePine, Loader2, Search } from 'lucide-react';
 import { apiService, type WordTreeResponse } from '../services/api';
 import Tree from 'react-d3-tree';
+import { ForceDirectedWordTree } from '../components/ForceDirectedWordTree';
+import type { ForceDirectedWordTreeHandle } from '../components/ForceDirectedWordTree';
 
 // Convert backend nested dict to react-d3-tree format
 function convertToD3Tree(node: unknown, maxLevel = 3, level = 0): any[] {
@@ -30,6 +32,8 @@ export function WordTree() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
+
+    const forceRef = useRef<ForceDirectedWordTreeHandle>(null);
 
     const handleGenerateTree = async () => {
         if (!text.trim()) {
@@ -198,6 +202,7 @@ export function WordTree() {
                         Word Tree for "{treeData.word}"
                     </h2>
                     <div style={{ width: '100%', height: '800px' }}>
+                        <h3 className="text-lg font-semibold mb-2">Tree Layout</h3>
                         <Tree
                             data={d3TreeData}
                             orientation="horizontal"
@@ -227,6 +232,34 @@ export function WordTree() {
                                 {tooltip.text}
                             </div>
                         )}
+                    </div>
+                    <div style={{ height: 40 }} />
+                    <div style={{ width: '100%', height: '800px' }}>
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-lg font-semibold">Force-Directed Graph</h3>
+                            <button
+                                type="button"
+                                className="px-3 py-1 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                onClick={() => forceRef.current?.reset()}
+                            >
+                                Reset Layout
+                            </button>
+                        </div>
+                        <div className="flex items-center gap-6 mb-4">
+                            <span className="flex items-center gap-1">
+                                <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', background: '#2563eb', border: '2px solid #2563eb' }}></span>
+                                <span className="ml-1 text-gray-800">Keyword/Root</span>
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', background: '#f59e42', border: '2px solid #f59e42' }}></span>
+                                <span className="ml-1 text-gray-800">Left Context</span>
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', background: '#10b981', border: '2px solid #10b981' }}></span>
+                                <span className="ml-1 text-gray-800">Right Context</span>
+                            </span>
+                        </div>
+                        <ForceDirectedWordTree ref={forceRef} treeData={treeData} width={800} height={700} />
                     </div>
                 </div>
             )}
