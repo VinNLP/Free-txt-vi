@@ -17,12 +17,30 @@ build-base-image:
 	$(DOCKER_BIN) build -t $(PROJECT_NAME)/backend:base -f build/api.base.Dockerfile .
 	-${DOCKER_BIN} images -q -f "dangling=true" | xargs ${DOCKER_BIN} rmi -f
 
+build-web-image:
+	${COMPOSE} build web
+
+build-all-images:
+	make build-base-image
+	make build-web-image
+
 teardown:
 	${COMPOSE} down -v
 	${COMPOSE} rm --force --stop -v
 
 setup:
-	make build-base-image
+	make build-all-images
 
 api-run:
 	${API_COMPOSE} sh -c 'python runner/main.py'
+
+web-run:
+	${COMPOSE} up web
+
+run-all:
+	${COMPOSE} up
+
+node-setup:
+	nvm use 20
+web-local-run:
+	cd web && yarn dev
