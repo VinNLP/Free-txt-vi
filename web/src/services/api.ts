@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:51561/api/v1/free_txt';
+const API_BASE_URL = 'http://localhost:65478/api/v1/free_txt';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -59,6 +59,26 @@ export interface ConcordanceResponse {
     results: ConcordanceEntry[];
 }
 
+export interface WordNetworkRequest {
+    text: string;
+    threshold?: number;
+}
+
+export interface WordNetworkNode {
+    id: string;
+}
+
+export interface WordNetworkEdge {
+    source: string;
+    target: string;
+    weight: number;
+}
+
+export interface WordNetworkResponse {
+    nodes: WordNetworkNode[];
+    edges: WordNetworkEdge[];
+}
+
 export const apiService = {
     // Sentiment Analysis
     async analyzeSentiment(text: string): Promise<MeaningAnalysisResponse> {
@@ -81,6 +101,12 @@ export const apiService = {
     // Concordance
     async concordance(request: ConcordanceRequest): Promise<ConcordanceResponse> {
         const response = await api.post('/concordance', request);
+        return response.data;
+    },
+
+    // Word Network
+    async wordNetwork(request: WordNetworkRequest): Promise<WordNetworkResponse> {
+        const response = await api.post('/word_network', request);
         return response.data;
     },
 }; 
