@@ -2,6 +2,7 @@ import py_vncorenlp
 from collections import defaultdict
 from typing import List, Dict
 import string
+from internal.services.vncorenlp_singleton import vncorenlp_model
 
 
 class WordTreeNode:
@@ -29,9 +30,7 @@ class WordTreeNode:
 
 class WordTree:
     def __init__(self):
-        self.model = py_vncorenlp.VnCoreNLP(
-            save_dir="/api/internal/services/pyvncorenlp"
-        )
+        self.model = vncorenlp_model
 
     async def build_word_tree(self, text: str, keyword: str, window: int = 5):
         seg_text = self.model.word_segment(text.lower())

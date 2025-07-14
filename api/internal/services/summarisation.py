@@ -24,9 +24,8 @@ class Summarizer:
         messages = [
             {
                 "role": "system",
-                "content": f"Return the summary content in its language in approximately {target_words} words",
+                "content": f"""Return the summary content in its language in approximately {target_words} words. Please return it in user input language. Don't return any other text. User input: {input_text}""",
             },
-            {"role": "user", "content": input_text},
         ]
         text = self.sum_qwen_tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True

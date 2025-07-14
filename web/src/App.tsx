@@ -3,6 +3,8 @@ import { Layout } from './components/Layout';
 import { SentimentAnalysis } from './pages/SentimentAnalysis';
 import { Summarization } from './pages/Summarization';
 import { WordTree } from './pages/WordTree';
+import Concordance from './pages/Concordance';
+import WordNetwork from './pages/WordNetwork';
 
 function App() {
   return (
@@ -13,6 +15,8 @@ function App() {
           <Route path="/sentiment" element={<SentimentAnalysis />} />
           <Route path="/summarization" element={<Summarization />} />
           <Route path="/word-tree" element={<WordTree />} />
+          <Route path="/concordance" element={<Concordance />} />
+          <Route path="/word-network" element={<WordNetwork />} />
         </Routes>
       </Layout>
     </Router>

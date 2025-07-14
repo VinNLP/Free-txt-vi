@@ -77,3 +77,39 @@ class WordEntry(BaseModel):
 class WordUseRelationshipsResponse(BaseModel):
     sentences: List[SentenceEntry] = Field(description="Sentences")
     words: List[WordEntry] = Field(description="Words")
+
+
+class ConcordanceRequest(BaseModel):
+    text: str = Field(description="Input text to analyze")
+    keyword: str = Field(description="Keyword to search for")
+    window_size: int = Field(description="Number of words before and after the keyword")
+
+
+class ConcordanceEntry(BaseModel):
+    left_context: str = Field(description="Words before the keyword")
+    keyword: str = Field(description="The keyword itself")
+    right_context: str = Field(description="Words after the keyword")
+
+
+class ConcordanceResponse(BaseModel):
+    results: List[ConcordanceEntry] = Field(description="List of concordance results")
+
+
+class WordNetworkRequest(BaseModel):
+    text: str = Field(description="Input text to analyze for word network")
+    threshold: float = Field(default=0.7, description="Similarity threshold for edges")
+
+
+class WordNetworkNode(BaseModel):
+    id: str = Field(description="Word node")
+
+
+class WordNetworkEdge(BaseModel):
+    source: str = Field(description="Source word")
+    target: str = Field(description="Target word")
+    weight: float = Field(description="Similarity weight")
+
+
+class WordNetworkResponse(BaseModel):
+    nodes: List[WordNetworkNode] = Field(description="List of word nodes")
+    edges: List[WordNetworkEdge] = Field(description="List of edges between words")

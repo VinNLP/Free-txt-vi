@@ -9,21 +9,30 @@ from internal.common.schemas.free_txt import (
     WordTreeResponse,
     MeaningAnalysisRequest,
     MeaningAnalysisResponse,
+    ConcordanceRequest,
+    ConcordanceResponse,
+    WordNetworkRequest,
+    WordNetworkResponse,
 )
 from internal.services.summarisation import Summarizer
 from internal.services.word_tree import WordTree
 from internal.services.meaning_analysis import MeaningAnalyzer
+from internal.services.word_use_relationships import ConcordanceService
+from internal.services.word_network import WordNetworkService
 
 
 class FreeTxtController:
     summarizer: Summarizer
     wordtree: WordTree
     meaning_analyzer: MeaningAnalyzer
+    word_network: WordNetworkService
 
     def __init__(self):
         self.summarizer = Summarizer()
         self.wordtree = WordTree()
         self.meaning_analyzer = MeaningAnalyzer()
+        self.concordance_service = ConcordanceService()
+        self.word_network = WordNetworkService()
 
     async def summarization(
         self, sum_request: SummarizationRequest
@@ -46,3 +55,21 @@ class FreeTxtController:
             meaning_analysis_request.text
         )
         return MeaningAnalysisResponse(sentences=sentences)
+
+    async def concordance(
+        self, concordance_request: ConcordanceRequest
+    ) -> ConcordanceResponse:
+        results = await self.concordance_service.concordance(
+            concordance_request.text,
+            concordance_request.keyword,
+            concordance_request.window_size,
+        )
+        return ConcordanceResponse(results=results)
+
+    async def wordnetwork(
+        self, word_network_request: WordNetworkRequest
+    ) -> WordNetworkResponse:
+        result = await self.word_network.build_network(
+            word_network_request.text, word_network_request.threshold
+        )
+        return result

@@ -64,7 +64,7 @@ interface ForceDirectedWordTreeProps {
 export const ForceDirectedWordTree = forwardRef<ForceDirectedWordTreeHandle, ForceDirectedWordTreeProps>(
     ({ treeData, width = 900, height = 700 }, ref) => {
         const svgRef = useRef<SVGSVGElement | null>(null);
-        const gRef = useRef<SVGGElement | null>(null);
+        // const gRef = useRef<SVGGElement | null>(null); // Not used, remove
         const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
 
         useImperativeHandle(ref, () => ({
@@ -90,34 +90,61 @@ export const ForceDirectedWordTree = forwardRef<ForceDirectedWordTreeHandle, For
                 .attr('height', height)
                 .style('cursor', 'grab');
 
+            // --- Add arrowhead markers ---
+            const defs = svg.append('defs');
+            defs.append('marker')
+                .attr('id', 'arrow-left')
+                .attr('viewBox', '0 -5 10 10')
+                .attr('refX', 2)
+                .attr('refY', 0)
+                .attr('markerWidth', 6)
+                .attr('markerHeight', 6)
+                .attr('orient', 'auto')
+                .append('path')
+                .attr('d', 'M10,-5L0,0L10,5')
+                .attr('fill', '#f59e42');
+            defs.append('marker')
+                .attr('id', 'arrow-right')
+                .attr('viewBox', '0 -5 10 10')
+                .attr('refX', 8)
+                .attr('refY', 0)
+                .attr('markerWidth', 6)
+                .attr('markerHeight', 6)
+                .attr('orient', 'auto')
+                .append('path')
+                .attr('d', 'M0,-5L10,0L0,5')
+                .attr('fill', '#10b981');
+
             // Add a group for zoom/pan
-            const g = svg.append('g').attr('ref', gRef);
+            const g = svg.append('g');
 
             // Set up zoom behavior
             const zoom = d3.zoom<SVGSVGElement, unknown>()
                 .scaleExtent([0.2, 4])
                 .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-                    g.attr('transform', event.transform);
+                    g.attr('transform', event.transform.toString());
                 });
             zoomRef.current = zoom;
-            svg.call(zoom);
+            if (svgRef.current) {
+                d3.select<SVGSVGElement, unknown>(svgRef.current).call(zoom);
+            }
 
-            // Find min/max count for scaling
-            const counts = nodes.map(n => typeof n.count === 'number' ? n.count : 1);
-            const minCount = Math.min(...counts);
-            const maxCount = Math.max(...counts);
-            const minR = 14, maxR = 40;
-            function getRadius(count: number | undefined, isRoot: boolean) {
-                if (isRoot) return maxR;
-                if (maxCount === minCount) return minR;
-                return minR + (((count ?? 1) - minCount) / (maxCount - minCount)) * (maxR - minR);
+            // Rectangle sizing based on word length
+            function getRectangleDimensions(id: string, count: number | undefined, isRoot: boolean) {
+                const word = id === treeData.word ? id : id.split('__').pop() || '';
+                const baseWidth = Math.max(word.length * 8, isRoot ? 60 : 40); // Root node wider
+                const baseHeight = isRoot ? 38 : 28;
+                return { width: baseWidth, height: baseHeight };
             }
             // Set up simulation
             const simulation = d3.forceSimulation<ForceNode>(nodes)
                 .force('link', d3.forceLink<ForceNode, ForceLink>(links).id((d: ForceNode) => d.id).distance(80).strength(1))
                 .force('charge', d3.forceManyBody<ForceNode>().strength(-250))
                 .force('center', d3.forceCenter(width / 2, height / 2))
-                .force('collide', d3.forceCollide<ForceNode>(d => getRadius(d.count, d.id === treeData.word) + 4));
+                .force('collide', d3.forceCollide<ForceNode>(d => {
+                    const dims = getRectangleDimensions(d.id, d.count, d.id === treeData.word);
+                    return Math.max(dims.width, dims.height) / 2 + 6;
+                }));
 
             // Draw links
             const link = g.append('g')
@@ -128,15 +155,36 @@ export const ForceDirectedWordTree = forwardRef<ForceDirectedWordTreeHandle, For
                 .join('line')
                 .attr('stroke-opacity', 0.7);
 
-            // Draw nodes
+            // Draw arrows at the middle of each link
+            const arrow = g.append('g')
+                .selectAll<SVGPathElement, ForceLink>('path')
+                .data(links)
+                .join('path')
+                .attr('fill', (d: ForceLink) => {
+                    const targetId = typeof d.target === 'string' ? d.target : d.target.id;
+                    const targetNode = nodes.find(n => n.id === targetId);
+                    if (targetNode?.group === 'left') return '#f59e42';
+                    if (targetNode?.group === 'right') return '#10b981';
+                    return '#aaa';
+                });
+
+            const LEFT_COLOR = '#fde68a'; // light orange
+            const RIGHT_COLOR = '#bbf7d0'; // light green
+            const ROOT_COLOR = '#60a5fa'; // blue
+            // Draw nodes as rectangles
             const node = g.append('g')
                 .attr('stroke', '#fff')
                 .attr('stroke-width', 2)
-                .selectAll<SVGCircleElement, ForceNode>('circle')
+                .selectAll<SVGRectElement, ForceNode>('rect')
                 .data(nodes)
-                .join('circle')
-                .attr('r', (d: ForceNode) => getRadius(d.count, d.id === treeData.word))
-                .attr('fill', (d: ForceNode) => d.group === 'root' ? '#2563eb' : d.group === 'left' ? '#f59e42' : '#10b981')
+                .join('rect')
+                .attr('fill', (d: ForceNode) =>
+                    d.group === 'root' ? ROOT_COLOR :
+                        d.group === 'left' ? LEFT_COLOR :
+                            d.group === 'right' ? RIGHT_COLOR :
+                                '#60a5fa')
+                .attr('rx', 6)
+                .attr('ry', 6)
                 .call(drag(simulation));
 
             // Draw labels
@@ -144,11 +192,11 @@ export const ForceDirectedWordTree = forwardRef<ForceDirectedWordTreeHandle, For
                 .selectAll<SVGTextElement, ForceNode>('text')
                 .data(nodes)
                 .join('text')
-                .text((d: ForceNode) => d.id === treeData.word ? d.id : d.id.split('__').pop())
+                .text((d: ForceNode) => d.id === treeData.word ? d.id : d.id.split('__').pop() || '')
                 .attr('font-size', (d: ForceNode) => d.id === treeData.word ? 22 : 16)
                 .attr('font-family', 'Inter,Roboto,Arial,Helvetica,sans-serif')
                 .attr('text-anchor', 'middle')
-                .attr('dy', 5)
+                .attr('dominant-baseline', 'middle')
                 .attr('pointer-events', 'none')
                 .attr('fill', '#222');
 
@@ -158,9 +206,45 @@ export const ForceDirectedWordTree = forwardRef<ForceDirectedWordTreeHandle, For
                     .attr('y1', (d: ForceLink) => (d.source as ForceNode).y ?? 0)
                     .attr('x2', (d: ForceLink) => (d.target as ForceNode).x ?? 0)
                     .attr('y2', (d: ForceLink) => (d.target as ForceNode).y ?? 0);
-                node
-                    .attr('cx', (d: ForceNode) => d.x ?? 0)
-                    .attr('cy', (d: ForceNode) => d.y ?? 0);
+
+                // Draw arrows at the midpoint of each link
+                arrow.attr('d', (d: ForceLink) => {
+                    let sx = (d.source as ForceNode).x ?? 0;
+                    let sy = (d.source as ForceNode).y ?? 0;
+                    let tx = (d.target as ForceNode).x ?? 0;
+                    let ty = (d.target as ForceNode).y ?? 0;
+                    // Determine direction based on group
+                    const targetId = typeof d.target === 'string' ? d.target : d.target.id;
+                    const targetNode = nodes.find(n => n.id === targetId);
+                    if (targetNode?.group === 'left') {
+                        // For left context, reverse the arrow direction
+                        [sx, sy, tx, ty] = [tx, ty, sx, sy];
+                    }
+                    // Midpoint
+                    const mx = (sx + tx) / 2;
+                    const my = (sy + ty) / 2;
+                    // Angle of the line
+                    const angle = Math.atan2(ty - sy, tx - sx);
+                    // Arrow size
+                    const size = 12;
+                    // Arrowhead points
+                    const arrowPoints = [
+                        [mx, my],
+                        [mx - size * Math.cos(angle - Math.PI / 8), my - size * Math.sin(angle - Math.PI / 8)],
+                        [mx - size * Math.cos(angle + Math.PI / 8), my - size * Math.sin(angle + Math.PI / 8)],
+                        [mx, my]
+                    ];
+                    return `M${arrowPoints[0][0]},${arrowPoints[0][1]} L${arrowPoints[1][0]},${arrowPoints[1][1]} L${arrowPoints[2][0]},${arrowPoints[2][1]} Z`;
+                });
+
+                node.each(function (d) {
+                    const dims = getRectangleDimensions(d.id, d.count, d.id === treeData.word);
+                    d3.select(this)
+                        .attr('x', (d.x ?? 0) - dims.width / 2)
+                        .attr('y', (d.y ?? 0) - dims.height / 2)
+                        .attr('width', dims.width)
+                        .attr('height', dims.height);
+                });
                 label
                     .attr('x', (d: ForceNode) => d.x ?? 0)
                     .attr('y', (d: ForceNode) => d.y ?? 0);
@@ -168,21 +252,21 @@ export const ForceDirectedWordTree = forwardRef<ForceDirectedWordTreeHandle, For
 
             // Drag behavior
             function drag(simulation: d3.Simulation<ForceNode, ForceLink>) {
-                function dragstarted(event: d3.D3DragEvent<SVGCircleElement, ForceNode, ForceNode>, d: ForceNode) {
+                function dragstarted(event: d3.D3DragEvent<SVGRectElement, ForceNode, ForceNode>, d: ForceNode) {
                     if (!event.active) simulation.alphaTarget(0.3).restart();
                     d.fx = d.x;
                     d.fy = d.y;
                 }
-                function dragged(event: d3.D3DragEvent<SVGCircleElement, ForceNode, ForceNode>, d: ForceNode) {
+                function dragged(event: d3.D3DragEvent<SVGRectElement, ForceNode, ForceNode>, d: ForceNode) {
                     d.fx = event.x;
                     d.fy = event.y;
                 }
-                function dragended(event: d3.D3DragEvent<SVGCircleElement, ForceNode, ForceNode>, d: ForceNode) {
+                function dragended(event: d3.D3DragEvent<SVGRectElement, ForceNode, ForceNode>, d: ForceNode) {
                     if (!event.active) simulation.alphaTarget(0);
                     d.fx = null;
                     d.fy = null;
                 }
-                return d3.drag<SVGCircleElement, ForceNode>()
+                return d3.drag<SVGRectElement, ForceNode>()
                     .on('start', dragstarted)
                     .on('drag', dragged)
                     .on('end', dragended);

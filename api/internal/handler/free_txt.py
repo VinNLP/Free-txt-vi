@@ -7,6 +7,8 @@ from internal.common.schemas.free_txt import (
     SummarizationRequest,
     WordTreeRequest,
     MeaningAnalysisRequest,
+    ConcordanceRequest,
+    WordNetworkRequest,
 )
 from internal.controller.free_txt import FreeTxtController
 from tools.uts_exception import exception_handler
@@ -29,3 +31,11 @@ class FreeTxtHandler:
     @exception_handler
     async def meaning_analysis(self, meaning_request: MeaningAnalysisRequest):
         return await self.controller.meaning_analysis(meaning_request)
+
+    @exception_handler
+    async def concordance(self, concordance_request: ConcordanceRequest):
+        return await self.controller.concordance(concordance_request)
+
+    @exception_handler
+    async def word_network(self, request: WordNetworkRequest):
+        return await self.controller.wordnetwork(request)

@@ -1,15 +1,20 @@
 import { useState, useMemo, useRef } from 'react';
 import { TreePine, Loader2, Search } from 'lucide-react';
 import { apiService, type WordTreeResponse } from '../services/api';
-import Tree from 'react-d3-tree';
+import TidyTree from '../components/TidyTree';
 import { ForceDirectedWordTree } from '../components/ForceDirectedWordTree';
 import type { ForceDirectedWordTreeHandle } from '../components/ForceDirectedWordTree';
 
 // Convert backend nested dict to react-d3-tree format
-function convertToD3Tree(node: unknown, maxLevel = 3, level = 0): any[] {
+interface D3TreeNode {
+    name: string;
+    attributes?: { count?: number };
+    children?: D3TreeNode[];
+}
+function convertToD3Tree(node: unknown, maxLevel = 3, level = 0): D3TreeNode[] {
     if (!node || typeof node !== 'object' || level > maxLevel) return [];
     const nodeObj = node as Record<string, unknown>;
-    const children: any[] = [];
+    const children: D3TreeNode[] = [];
     for (const [key, value] of Object.entries(nodeObj)) {
         if (key === 'count') continue;
         let count = 1;
@@ -31,7 +36,6 @@ export function WordTree() {
     const [treeData, setTreeData] = useState<WordTreeResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
 
     const forceRef = useRef<ForceDirectedWordTreeHandle>(null);
 
@@ -68,70 +72,6 @@ export function WordTree() {
             children: [...leftChildren, ...rightChildren],
         }];
     }, [treeData]);
-
-    // Find min/max count for scaling
-    function getAllCountsD3(node: any): number[] {
-        if (!node) return [];
-        let counts: number[] = [];
-        if (node.attributes && typeof node.attributes.count === 'number') {
-            counts.push(node.attributes.count);
-        }
-        if (node.children) {
-            for (const child of node.children) {
-                counts = counts.concat(getAllCountsD3(child));
-            }
-        }
-        return counts;
-    }
-    const allCounts = d3TreeData ? getAllCountsD3(d3TreeData[0]) : [];
-    const minCount = allCounts.length > 0 ? Math.min(...allCounts) : 1;
-    const maxCount = allCounts.length > 0 ? Math.max(...allCounts) : 1;
-    function getFontSize(count: number) {
-        const minFont = 14, maxFont = 32;
-        if (maxCount === minCount) return `${maxFont}px`;
-        return `${minFont + ((count - minCount) / (maxCount - minFont)) * (maxFont - minFont)}px`;
-    }
-
-    // Custom node rendering with tooltip
-    const renderCustomNode = ({ nodeDatum, hierarchyPointNode }: any) => {
-        const count = nodeDatum.attributes?.count;
-        return (
-            <g
-                onMouseEnter={() => {
-                    if (count)
-                        setTooltip({
-                            x: hierarchyPointNode.x,
-                            y: hierarchyPointNode.y,
-                            text: `${nodeDatum.name} (${count})`,
-                        });
-                }}
-                onMouseLeave={() => setTooltip(null)}
-                style={{ cursor: 'pointer' }}
-            >
-                <text
-                    textAnchor="middle"
-                    fontWeight="300"
-                    fontFamily="Inter,Roboto,Arial,Helvetica,sans-serif"
-                    fontSize={getFontSize(count || 1)}
-                    fill="#222"
-                    dy={0}
-                >
-                    {nodeDatum.name}
-                </text>
-                {count ? (
-                    <text
-                        textAnchor="middle"
-                        fontSize={12}
-                        fill="#888"
-                        dy={18}
-                        fontFamily="Inter,Roboto,Arial,Helvetica,sans-serif"
-                    >
-                        ({count})
-                    </text>
-                ) : null}
-            </g>
-        );
-    };
 
     return (
         <div className="space-y-6">
@@ -202,36 +142,8 @@ export function WordTree() {
                         Word Tree for "{treeData.word}"
                     </h2>
                     <div style={{ width: '100%', height: '800px' }}>
-                        <h3 className="text-lg font-semibold mb-2">Tree Layout</h3>
-                        <Tree
-                            data={d3TreeData}
-                            orientation="horizontal"
-                            translate={{ x: 500, y: 400 }}
-                            pathFunc="diagonal"
-                            renderCustomNodeElement={renderCustomNode}
-                            collapsible={false}
-                            zoomable={true}
-                            separation={{ siblings: 2.5, nonSiblings: 3 }}
-                            enableLegacyTransitions={true}
-                        />
-                        {tooltip && (
-                            <div
-                                style={{
-                                    position: 'absolute',
-                                    left: tooltip.x + 520,
-                                    top: tooltip.y + 120,
-                                    background: 'rgba(0,0,0,0.8)',
-                                    color: '#fff',
-                                    padding: '4px 10px',
-                                    borderRadius: 4,
-                                    pointerEvents: 'none',
-                                    fontSize: 14,
-                                    zIndex: 10,
-                                }}
-                            >
-                                {tooltip.text}
-                            </div>
-                        )}
+                        <h3 className="text-lg font-semibold mb-2">Tidy Tree Layout</h3>
+                        <TidyTree data={d3TreeData} width={1000} height={800} />
                     </div>
                     <div style={{ height: 40 }} />
                     <div style={{ width: '100%', height: '800px' }}>

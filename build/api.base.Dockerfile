@@ -29,7 +29,8 @@ RUN pip install -r requirements
 
 RUN mkdir -p /models
 RUN python -c "import nltk; \
-    nltk.download('punkt_tab')"
+    nltk.download('punkt_tab') \
+    nltk.download('stopwords')"
 
 RUN python -c "import os; \
     from transformers import AutoTokenizer, AutoModelForSequenceClassification; \
@@ -46,5 +47,12 @@ RUN python -c "import os; \
     model.save_pretrained('/models/qwen2.5-0.5b-instruct'); \
     tokenizer.save_pretrained('/models/qwen2.5-0.5b-instruct')"
 
+RUN python -c "import os; \
+    from sentence_transformers import SentenceTransformer; \
+    print('Downloading Qwen3-Embedding-0.6B model...'); \
+    model = SentenceTransformer('Qwen/Qwen3-Embedding-0.6B'); \
+    model.save('/models/qwen3-embedding-0.6b')"
+
 ENV MODEL_SUM_PATH=/models/qwen2.5-0.5b-instruct
 ENV MODEL_SENTIMENT_PATH=/models/multilingual-sentiment-analysis
+ENV MODEL_EMBEDDING_PATH=/models/qwen3-embedding-0.6b
