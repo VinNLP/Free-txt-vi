@@ -13,6 +13,7 @@ import {
     Title,
 } from 'chart.js';
 import type { TooltipItem } from 'chart.js';
+import { useInputText } from '../components/useInputText';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
@@ -40,7 +41,7 @@ const SENTIMENT_COLORS: Record<SentimentClass, string> = {
 };
 
 export function SentimentAnalysis() {
-    const [text, setText] = useState('');
+    const { inputText: text, setInputText: setText } = useInputText();
     const [results, setResults] = useState<Sentence[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');

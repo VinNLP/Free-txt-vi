@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { FileText, Loader2, Copy, Check } from 'lucide-react';
 import { apiService } from '../services/api';
+import { useInputText } from '../components/useInputText';
 
 export function Summarization() {
-    const [text, setText] = useState('');
+    const { inputText: text, setInputText: setText } = useInputText();
     const [ratio, setRatio] = useState(0.3);
     const [summary, setSummary] = useState('');
     const [loading, setLoading] = useState(false);
