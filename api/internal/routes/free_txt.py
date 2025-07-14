@@ -7,6 +7,7 @@ from internal.common.schemas.free_txt import (
     WordCloudResponse,
     WordTreeResponse,
     WordUseRelationshipsResponse,
+    ConcordanceResponse,
 )
 from internal.handler.free_txt import FreeTxtHandler
 
@@ -72,3 +73,12 @@ class FreeTxtRoute:
         #     summary="Word Use and Relationships",
         #     description="Create Word Use and Relationships",
         # )
+
+        self.router.add_api_route(
+            path="/concordance",
+            endpoint=self.handler.concordance,
+            methods=["POST"],
+            response_model=ConcordanceResponse,
+            summary="Text Concordance",
+            description="Return keyword with N words before and after for each occurrence.",
+        )

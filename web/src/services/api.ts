@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:65207/api/v1/free_txt';
+const API_BASE_URL = 'http://localhost:51561/api/v1/free_txt';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -43,6 +43,22 @@ export interface WordTreeResponse {
     right: WordTreeNode;
 }
 
+export interface ConcordanceRequest {
+    text: string;
+    keyword: string;
+    window_size: number;
+}
+
+export interface ConcordanceEntry {
+    left_context: string;
+    keyword: string;
+    right_context: string;
+}
+
+export interface ConcordanceResponse {
+    results: ConcordanceEntry[];
+}
+
 export const apiService = {
     // Sentiment Analysis
     async analyzeSentiment(text: string): Promise<MeaningAnalysisResponse> {
@@ -59,6 +75,12 @@ export const apiService = {
     // Word Tree
     async createWordTree(text: string, keyword: string): Promise<WordTreeResponse> {
         const response = await api.post('/word_tree', { text, keyword });
+        return response.data;
+    },
+
+    // Concordance
+    async concordance(request: ConcordanceRequest): Promise<ConcordanceResponse> {
+        const response = await api.post('/concordance', request);
         return response.data;
     },
 }; 
