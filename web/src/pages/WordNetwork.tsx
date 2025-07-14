@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { apiService } from '../services/api';
 import { Share2 } from 'lucide-react';
 import ForceDirectedWordNetwork from '../components/ForceDirectedWordNetwork.tsx';
+import { useInputText } from '../components/useInputText';
 
 interface Node {
     id: string;
@@ -19,7 +20,7 @@ interface WordNetworkResponse {
 }
 
 const WordNetwork: React.FC = () => {
-    const [text, setText] = useState('');
+    const { inputText: text, setInputText: setText } = useInputText();
     const [network, setNetwork] = useState<WordNetworkResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');

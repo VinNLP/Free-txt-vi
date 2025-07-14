@@ -5,21 +5,24 @@ import { Summarization } from './pages/Summarization';
 import { WordTree } from './pages/WordTree';
 import Concordance from './pages/Concordance';
 import WordNetwork from './pages/WordNetwork';
+import { InputTextProvider } from './components/InputTextContext';
 
 function App() {
   return (
-    <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<SentimentAnalysis />} />
-          <Route path="/sentiment" element={<SentimentAnalysis />} />
-          <Route path="/summarization" element={<Summarization />} />
-          <Route path="/word-tree" element={<WordTree />} />
-          <Route path="/concordance" element={<Concordance />} />
-          <Route path="/word-network" element={<WordNetwork />} />
-        </Routes>
-      </Layout>
-    </Router>
+    <InputTextProvider>
+      <Router>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<SentimentAnalysis />} />
+            <Route path="/sentiment" element={<SentimentAnalysis />} />
+            <Route path="/summarization" element={<Summarization />} />
+            <Route path="/word-tree" element={<WordTree />} />
+            <Route path="/concordance" element={<Concordance />} />
+            <Route path="/word-network" element={<WordNetwork />} />
+          </Routes>
+        </Layout>
+      </Router>
+    </InputTextProvider>
   );
 }
 

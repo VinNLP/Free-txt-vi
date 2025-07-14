@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BookOpen, Loader2, Search } from 'lucide-react';
 import { apiService } from '../services/api';
+import { useInputText } from '../components/useInputText';
 
 interface ConcordanceEntry {
     left_context: string;
@@ -9,7 +10,7 @@ interface ConcordanceEntry {
 }
 
 export function Concordance() {
-    const [text, setText] = useState('');
+    const { inputText: text, setInputText: setText } = useInputText();
     const [keyword, setKeyword] = useState('');
     const [windowSize, setWindowSize] = useState(5);
     const [results, setResults] = useState<ConcordanceEntry[]>([]);

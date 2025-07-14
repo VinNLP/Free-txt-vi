@@ -1,9 +1,10 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { TreePine, Loader2, Search } from 'lucide-react';
 import { apiService, type WordTreeResponse } from '../services/api';
 import TidyTree from '../components/TidyTree';
 import { ForceDirectedWordTree } from '../components/ForceDirectedWordTree';
 import type { ForceDirectedWordTreeHandle } from '../components/ForceDirectedWordTree';
+import { useInputText } from '../components/useInputText';
 
 // Convert backend nested dict to react-d3-tree format
 interface D3TreeNode {
@@ -31,7 +32,7 @@ function convertToD3Tree(node: unknown, maxLevel = 3, level = 0): D3TreeNode[] {
 }
 
 export function WordTree() {
-    const [text, setText] = useState('');
+    const { inputText: text, setInputText: setText } = useInputText();
     const [keyword, setKeyword] = useState('');
     const [treeData, setTreeData] = useState<WordTreeResponse | null>(null);
     const [loading, setLoading] = useState(false);
