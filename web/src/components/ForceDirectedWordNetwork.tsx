@@ -45,12 +45,22 @@ const ForceDirectedWordNetwork: React.FC<ForceDirectedWordNetworkProps> = ({ nod
             });
         (svg as d3.Selection<SVGSVGElement, unknown, null, undefined>).call(zoom);
 
-        // Set up simulation
+        // Calculate rectangle dimensions based on word length
+        const getRectangleDimensions = (word: string) => {
+            const baseWidth = Math.max(word.length * 8, 40); // Minimum width of 40
+            const baseHeight = 30; // Fixed height
+            return { width: baseWidth, height: baseHeight };
+        };
+
+        // Set up simulation with dynamic collision radius
         const simulation = d3.forceSimulation<Node>(nodes)
             .force('link', d3.forceLink<Node, Edge>(edges).id((d: Node) => d.id).distance(120).strength(1))
             .force('charge', d3.forceManyBody<Node>().strength(-350))
             .force('center', d3.forceCenter(width / 2, height / 2))
-            .force('collide', d3.forceCollide<Node>(32));
+            .force('collide', d3.forceCollide<Node>((d) => {
+                const dims = getRectangleDimensions(d.id);
+                return Math.max(dims.width, dims.height) / 2 + 10; // Add padding
+            }));
 
         // Draw links
         const link = g.append('g')
@@ -62,15 +72,16 @@ const ForceDirectedWordNetwork: React.FC<ForceDirectedWordNetworkProps> = ({ nod
             .attr('stroke-opacity', 0.7)
             .attr('marker-end', 'url(#arrow)');
 
-        // Draw nodes
+        // Draw nodes as rectangles
         const node = g.append('g')
             .attr('stroke', '#fff')
             .attr('stroke-width', 2)
-            .selectAll<SVGCircleElement, Node>('circle')
+            .selectAll<SVGRectElement, Node>('rect')
             .data(nodes)
-            .join('circle')
-            .attr('r', 22)
+            .join('rect')
             .attr('fill', '#60a5fa')
+            .attr('rx', 6) // Rounded corners
+            .attr('ry', 6)
             .call(drag(simulation));
 
         // Draw labels
@@ -79,10 +90,10 @@ const ForceDirectedWordNetwork: React.FC<ForceDirectedWordNetworkProps> = ({ nod
             .data(nodes)
             .join('text')
             .text((d) => d.id)
-            .attr('font-size', 16)
+            .attr('font-size', 14)
             .attr('font-family', 'Inter,Roboto,Arial,Helvetica,sans-serif')
             .attr('text-anchor', 'middle')
-            .attr('dy', 5)
+            .attr('dominant-baseline', 'middle')
             .attr('pointer-events', 'none')
             .attr('fill', '#222');
 
@@ -105,9 +116,17 @@ const ForceDirectedWordNetwork: React.FC<ForceDirectedWordNetworkProps> = ({ nod
                 .attr('y1', (d) => (typeof d.source === 'string' ? 0 : d.source.y ?? 0))
                 .attr('x2', (d) => (typeof d.target === 'string' ? 0 : d.target.x ?? 0))
                 .attr('y2', (d) => (typeof d.target === 'string' ? 0 : d.target.y ?? 0));
-            node
-                .attr('cx', (d) => d.x ?? 0)
-                .attr('cy', (d) => d.y ?? 0);
+
+            node.each(function (d) {
+                const dims = getRectangleDimensions(d.id);
+                const rect = d3.select(this);
+                rect
+                    .attr('x', (d.x ?? 0) - dims.width / 2)
+                    .attr('y', (d.y ?? 0) - dims.height / 2)
+                    .attr('width', dims.width)
+                    .attr('height', dims.height);
+            });
+
             label
                 .attr('x', (d) => d.x ?? 0)
                 .attr('y', (d) => d.y ?? 0);
@@ -115,21 +134,21 @@ const ForceDirectedWordNetwork: React.FC<ForceDirectedWordNetworkProps> = ({ nod
 
         // Drag behavior
         function drag(simulation: d3.Simulation<Node, Edge>) {
-            function dragstarted(event: d3.D3DragEvent<SVGCircleElement, Node, Node>, d: Node) {
+            function dragstarted(event: d3.D3DragEvent<SVGRectElement, Node, Node>, d: Node) {
                 if (!event.active) simulation.alphaTarget(0.3).restart();
                 d.fx = d.x;
                 d.fy = d.y;
             }
-            function dragged(event: d3.D3DragEvent<SVGCircleElement, Node, Node>, d: Node) {
+            function dragged(event: d3.D3DragEvent<SVGRectElement, Node, Node>, d: Node) {
                 d.fx = event.x;
                 d.fy = event.y;
             }
-            function dragended(event: d3.D3DragEvent<SVGCircleElement, Node, Node>, d: Node) {
+            function dragended(event: d3.D3DragEvent<SVGRectElement, Node, Node>, d: Node) {
                 if (!event.active) simulation.alphaTarget(0);
                 d.fx = null;
                 d.fy = null;
             }
-            return d3.drag<SVGCircleElement, Node>()
+            return d3.drag<SVGRectElement, Node>()
                 .on('start', dragstarted)
                 .on('drag', dragged)
                 .on('end', dragended);
