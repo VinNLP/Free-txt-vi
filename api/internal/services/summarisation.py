@@ -2,6 +2,7 @@ from nltk import sent_tokenize
 from summa.summarizer import summarize as summa_summarizer
 from transformers import pipeline
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
 import nltk
 import os
 
@@ -10,11 +11,10 @@ class Summarizer:
     def __init__(self):
 
         model_path = os.getenv("MODEL_SUM_PATH", "Qwen/Qwen2.5-0.5B-Instruct")
-
-        self.sum_qwen_model = AutoModelForCausalLM.from_pretrained(
-            model_path, torch_dtype="auto", device_map="auto"
-        )
         self.sum_qwen_tokenizer = AutoTokenizer.from_pretrained(model_path)
+        self.sum_qwen_model = AutoModelForCausalLM.from_pretrained(
+            model_path, torch_dtype="auto", device_map="cuda:4" if torch.cuda.is_available() else "cpu"
+        )
 
     async def sum_qwen(self, input_text, chosen_ratio):
         # Calculate target word count based on chosen_ratio

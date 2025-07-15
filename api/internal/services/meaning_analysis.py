@@ -5,12 +5,14 @@ from internal.common.schemas.free_txt import Sentence
 
 
 class MeaningAnalyzer:
+    
     def __init__(self):
-        model_path = os.getenv(
-            "MODEL_SENTIMENT_PATH", "tabularisai/multilingual-sentiment-analysis"
-        )
+        model_path = os.getenv("MODEL_SENTIMENT_PATH", "tabularisai/multilingual-sentiment-analysis")
+        self.device = "cuda:4" if torch.cuda.is_available() else "cpu"
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            model_path
+        ).to(self.device)
 
     async def meaning_analyse(self, input_text: str):
         texts = input_text.split(".")
@@ -22,6 +24,7 @@ class MeaningAnalyzer:
         inputs = self.tokenizer(
             texts, return_tensors="pt", truncation=True, padding=True, max_length=512
         )
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
         with torch.no_grad():
             outputs = self.model(**inputs)
         probabilities = torch.nn.functional.softmax(outputs.logits, dim=-1)

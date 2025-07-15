@@ -18,7 +18,8 @@ import stopwordsiso as stopwords
 class WordNetworkService:
     def __init__(self):
         model_path = os.getenv("MODEL_EMBEDDING_PATH", "Qwen/Qwen3-Embedding-0.6B")
-        self.model = SentenceTransformer(model_path)
+        self.model = SentenceTransformer(model_path).to("cuda:4" if torch.cuda.is_available() else "cpu")
+
 
     def extract_words(self, text: str) -> List[str]:
         # Use VnCoreNLP for word segmentation, then remove underscores and punctuation, and filter stopwords
