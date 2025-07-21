@@ -1,6 +1,10 @@
 import axios from 'axios';
+<<<<<<< HEAD
 
 const API_BASE_URL = 'http://localhost:8000/api/v1/free_txt';
+=======
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL + "/api/v1/free_txt";
+>>>>>>> f09bf8c (writing docs how to run)
 
 const api = axios.create({
     baseURL: API_BASE_URL,
