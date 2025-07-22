@@ -1,5 +1,5 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
-import { Brain, Loader2, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { useState, useMemo, useRef } from 'react';
+import { Brain, Loader2, TrendingUp, TrendingDown, Minus, BarChart3, FileSpreadsheet } from 'lucide-react';
 import { apiService, type Sentence } from '../services/api';
 import { Pie, Bar } from 'react-chartjs-2';
 import {
@@ -15,6 +15,7 @@ import {
 import type { TooltipItem } from 'chart.js';
 import { useInputText } from '../components/useInputText';
 import FileUploadToInputText from '../components/FileUploadToInputText';
+import { downloadSentimentResults, downloadSentimentResultsCSV } from '../utils/downloadUtils';
 import React from 'react';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
@@ -50,6 +51,8 @@ export function SentimentAnalysis() {
     const [error, setError] = useState('');
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const pieChartRef = useRef<ChartJS<'pie'>>(null);
+    const barChartRef = useRef<ChartJS<'bar'>>(null);
 
     const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const words = e.target.value.split(/\s+/).filter(Boolean);
@@ -88,6 +91,38 @@ export function SentimentAnalysis() {
             console.error('Sentiment analysis error:', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDownloadJSON = () => {
+        downloadSentimentResults(results, text);
+    };
+
+    const handleDownloadCSV = () => {
+        downloadSentimentResultsCSV(results);
+    };
+
+    const handleDownloadPieChart = () => {
+        if (pieChartRef.current) {
+            const canvas = pieChartRef.current.canvas;
+            const link = document.createElement('a');
+            link.download = 'sentiment-pie-chart.png';
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
+
+    const handleDownloadBarChart = () => {
+        if (barChartRef.current) {
+            const canvas = barChartRef.current.canvas;
+            const link = document.createElement('a');
+            link.download = 'sentiment-bar-chart.png';
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     };
 
@@ -262,19 +297,51 @@ export function SentimentAnalysis() {
                         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex flex-col items-center">
                             <h3 className="text-lg font-semibold mb-2">Sentiment Distribution (Pie)</h3>
                             <div className="w-full max-w-xs">
-                                <Pie data={pieData} options={pieOptions} />
+                                <Pie ref={pieChartRef} data={pieData} options={pieOptions} />
                             </div>
                         </div>
                         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex flex-col items-center">
                             <h3 className="text-lg font-semibold mb-2">Sentiment Counts (Bar)</h3>
                             <div className="w-full max-w-xs">
-                                <Bar data={barData} options={barOptions} />
+                                <Bar ref={barChartRef} data={barData} options={barOptions} />
                             </div>
                         </div>
                     </div>
 
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <h2 className="text-xl font-semibold text-gray-900 mb-4">Analysis Results</h2>
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-semibold text-gray-900">Analysis Results</h2>
+                            <div className="flex flex-wrap gap-2">
+                                <button
+                                    onClick={handleDownloadJSON}
+                                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                                    Download JSON
+                                </button>
+                                <button
+                                    onClick={handleDownloadCSV}
+                                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                                    Download CSV
+                                </button>
+                                <button
+                                    onClick={handleDownloadPieChart}
+                                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <BarChart3 className="h-4 w-4 mr-2" />
+                                    Download Pie Chart
+                                </button>
+                                <button
+                                    onClick={handleDownloadBarChart}
+                                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <BarChart3 className="h-4 w-4 mr-2" />
+                                    Download Bar Chart
+                                </button>
+                            </div>
+                        </div>
                         <div className="space-y-4">
                             {results.map((sentence, index) => (
                                 <div

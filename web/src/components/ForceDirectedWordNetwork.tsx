@@ -55,12 +55,12 @@ const ForceDirectedWordNetwork: React.FC<ForceDirectedWordNetworkProps> = ({ nod
         const colorScale = d3.scaleLinear<string>().domain([minW, maxW]).range(['#d1d5db', '#2563eb']);
         // Set up simulation
         const simulation = d3.forceSimulation<Node>(nodes)
-            .force('link', d3.forceLink<Node, Edge>(edges).id((d: Node) => d.id).distance(120).strength(1))
-            .force('charge', d3.forceManyBody<Node>().strength(-350))
+            .force('link', d3.forceLink<Node, Edge>(edges).id((d: Node) => d.id).distance(400).strength(0.8))
+            .force('charge', d3.forceManyBody<Node>().strength(-200))
             .force('center', d3.forceCenter(width / 2, height / 2))
             .force('collide', d3.forceCollide<Node>((d) => {
                 const dims = getRectangleDimensions(d.id);
-                return Math.max(dims.width, dims.height) / 2 + 10;
+                return Math.max(dims.width, dims.height) / 2 + 40;
             }));
         // Draw links
         const link = g.append('g')
@@ -71,6 +71,20 @@ const ForceDirectedWordNetwork: React.FC<ForceDirectedWordNetworkProps> = ({ nod
             .attr('stroke-opacity', (d, i) => highlightedEdge === i ? 1 : 0.7)
             .attr('stroke-width', d => thicknessScale(d.weight))
             .attr('stroke', d => colorScale(d.weight))
+            .on('mouseover', function (event, d) {
+                // Show weight on hover
+                setTooltip({
+                    x: event.offsetX,
+                    y: event.offsetY,
+                    content: `Weight: ${d.weight}`
+                });
+            })
+            .on('mouseout', function () {
+                // Only hide tooltip if no edge is clicked
+                if (highlightedEdge === null) {
+                    setTooltip(null);
+                }
+            })
             .on('click', function (event, d) {
                 const i = edges.indexOf(d);
                 if (highlightedEdge === i) {

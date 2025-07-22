@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Share2, Loader2, Download, BarChart3 } from 'lucide-react';
 import { apiService } from '../services/api';
-import { Share2 } from 'lucide-react';
 import ForceDirectedWordNetwork from '../components/ForceDirectedWordNetwork.tsx';
 import { useInputText } from '../components/useInputText';
 import FileUploadToInputText from '../components/FileUploadToInputText';
+import { downloadWordNetwork, downloadSVGAsPNG } from '../utils/downloadUtils';
 
 interface Node {
     id: string;
@@ -27,6 +28,7 @@ const WordNetwork: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const networkRef = useRef<HTMLDivElement>(null);
 
     const handleGenerateNetwork = async () => {
         if (!text.trim()) {
@@ -43,6 +45,21 @@ const WordNetwork: React.FC = () => {
             console.error('Word network error:', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDownloadJSON = () => {
+        if (network) {
+            downloadWordNetwork(network, text);
+        }
+    };
+
+    const handleDownloadPNG = () => {
+        if (networkRef.current) {
+            const svg = networkRef.current.querySelector('svg');
+            if (svg) {
+                downloadSVGAsPNG(svg, 'word-network');
+            }
         }
     };
 
@@ -66,7 +83,7 @@ const WordNetwork: React.FC = () => {
     }, [text]);
 
     // Limit the number of nodes and edges for clarity
-    const NODE_LIMIT = 30;
+    const NODE_LIMIT = 50;
     let filteredNetwork = network;
     if (network) {
         // Count node degrees
@@ -122,7 +139,14 @@ const WordNetwork: React.FC = () => {
                         disabled={loading}
                         className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {loading ? 'Generating...' : 'Generate Word Network'}
+                        {loading ? (
+                            <>
+                                <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
+                                Generating...
+                            </>
+                        ) : (
+                            'Generate Word Network'
+                        )}
                     </button>
                     {error && (
                         <div className="bg-red-50 border border-red-200 rounded-md p-4">
@@ -134,8 +158,26 @@ const WordNetwork: React.FC = () => {
 
             {filteredNetwork && filteredNetwork.nodes.length > 0 && (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h2 className="text-xl font-semibold text-blue-700 mb-4">Network Graph (Top {NODE_LIMIT} nodes)</h2>
-                    <div className="w-full h-[600px]">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-semibold text-blue-700">Network Graph (Top {NODE_LIMIT} nodes)</h2>
+                        <div className="flex space-x-2">
+                            <button
+                                onClick={handleDownloadJSON}
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                            >
+                                <Download className="h-4 w-4 mr-2" />
+                                Download Network (JSON)
+                            </button>
+                            <button
+                                onClick={handleDownloadPNG}
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                            >
+                                <BarChart3 className="h-4 w-4 mr-2" />
+                                Download Network (PNG)
+                            </button>
+                        </div>
+                    </div>
+                    <div className="w-full h-[600px]" ref={networkRef}>
                         <ForceDirectedWordNetwork nodes={filteredNetwork.nodes} edges={filteredNetwork.edges} />
                     </div>
                 </div>
