@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FileText, Loader2, Copy, Check } from 'lucide-react';
+import { FileText, Loader2, Copy, Check, Download, FileSpreadsheet } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useInputText } from '../components/useInputText';
 import FileUploadToInputText from '../components/FileUploadToInputText';
+import { downloadSummary, downloadAsTXT } from '../utils/downloadUtils';
 
 export function Summarization() {
     const WORD_LIMIT = 1000;
@@ -62,6 +63,14 @@ export function Summarization() {
         } catch (err) {
             console.error('Failed to copy text:', err);
         }
+    };
+
+    const handleDownloadJSON = () => {
+        downloadSummary(summary, text, ratio);
+    };
+
+    const handleDownloadTXT = () => {
+        downloadAsTXT(summary, 'text-summary');
     };
 
     return (
@@ -143,22 +152,38 @@ export function Summarization() {
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-xl font-semibold text-gray-900">Summary</h2>
-                        <button
-                            onClick={handleCopy}
-                            className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                            {copied ? (
-                                <>
-                                    <Check className="h-4 w-4 mr-1 text-green-500" />
-                                    Copied!
-                                </>
-                            ) : (
-                                <>
-                                    <Copy className="h-4 w-4 mr-1" />
-                                    Copy
-                                </>
-                            )}
-                        </button>
+                        <div className="flex space-x-2">
+                            <button
+                                onClick={handleCopy}
+                                className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                                {copied ? (
+                                    <>
+                                        <Check className="h-4 w-4 mr-1 text-green-500" />
+                                        Copied!
+                                    </>
+                                ) : (
+                                    <>
+                                        <Copy className="h-4 w-4 mr-1" />
+                                        Copy
+                                    </>
+                                )}
+                            </button>
+                            <button
+                                onClick={handleDownloadJSON}
+                                className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                                <Download className="h-4 w-4 mr-1" />
+                                Download JSON
+                            </button>
+                            <button
+                                onClick={handleDownloadTXT}
+                                className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                                <FileSpreadsheet className="h-4 w-4 mr-1" />
+                                Download TXT
+                            </button>
+                        </div>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-4">
                         <p className="text-gray-900 leading-relaxed">{summary}</p>

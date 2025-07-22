@@ -1,11 +1,12 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { TreePine, Loader2, Search } from 'lucide-react';
+import { TreePine, Loader2, Search, Download, BarChart3 } from 'lucide-react';
 import { apiService, type WordTreeResponse } from '../services/api';
 import TidyTree from '../components/TidyTree';
 import { ForceDirectedWordTree } from '../components/ForceDirectedWordTree';
 import type { ForceDirectedWordTreeHandle } from '../components/ForceDirectedWordTree';
 import { useInputText } from '../components/useInputText';
 import FileUploadToInputText from '../components/FileUploadToInputText';
+import { downloadWordTree, downloadSVGAsPNG } from '../utils/downloadUtils';
 
 // Convert backend nested dict to react-d3-tree format
 interface D3TreeNode {
@@ -42,6 +43,8 @@ export function WordTree() {
 
     const forceRef = useRef<ForceDirectedWordTreeHandle>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const tidyTreeRef = useRef<HTMLDivElement>(null);
+    const forceTreeRef = useRef<HTMLDivElement>(null);
 
     const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const words = e.target.value.split(/\s+/).filter(Boolean);
@@ -81,6 +84,30 @@ export function WordTree() {
             console.error('Word tree error:', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDownloadJSON = () => {
+        if (treeData) {
+            downloadWordTree(treeData, text);
+        }
+    };
+
+    const handleDownloadTidyTreePNG = () => {
+        if (tidyTreeRef.current) {
+            const svg = tidyTreeRef.current.querySelector('svg');
+            if (svg) {
+                downloadSVGAsPNG(svg, 'word-tree-tidy');
+            }
+        }
+    };
+
+    const handleDownloadForceTreePNG = () => {
+        if (forceTreeRef.current) {
+            const svg = forceTreeRef.current.querySelector('svg');
+            if (svg) {
+                downloadSVGAsPNG(svg, 'word-tree-force');
+            }
         }
     };
 
@@ -169,15 +196,40 @@ export function WordTree() {
 
             {treeData && d3TreeData && (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6" style={{ position: 'relative' }}>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                        Word Tree for "{treeData.word}"
-                    </h2>
-                    <div style={{ width: '100%', height: '800px' }}>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-semibold text-gray-900">
+                            Word Tree for "{treeData.word}"
+                        </h2>
+                        <div className="flex space-x-2">
+                            <button
+                                onClick={handleDownloadJSON}
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                            >
+                                <Download className="h-4 w-4 mr-2" />
+                                Download JSON
+                            </button>
+                            <button
+                                onClick={handleDownloadTidyTreePNG}
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                            >
+                                <BarChart3 className="h-4 w-4 mr-2" />
+                                Download Tidy Tree PNG
+                            </button>
+                            <button
+                                onClick={handleDownloadForceTreePNG}
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                            >
+                                <BarChart3 className="h-4 w-4 mr-2" />
+                                Download Force Tree PNG
+                            </button>
+                        </div>
+                    </div>
+                    <div ref={tidyTreeRef} style={{ width: '100%', height: '800px' }}>
                         <h3 className="text-lg font-semibold mb-2">Tidy Tree Layout</h3>
                         <TidyTree data={d3TreeData} width={1000} height={800} />
                     </div>
                     <div style={{ height: 40 }} />
-                    <div style={{ width: '100%', height: '800px' }}>
+                    <div ref={forceTreeRef} style={{ width: '100%', height: '800px' }}>
                         <div className="flex items-center justify-between mb-2">
                             <h3 className="text-lg font-semibold">Force-Directed Graph</h3>
                             <button

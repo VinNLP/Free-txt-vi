@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { BookOpen, Loader2, Search } from 'lucide-react';
+import { BookOpen, Loader2, Search, Download, FileSpreadsheet } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useInputText } from '../components/useInputText';
 import FileUploadToInputText from '../components/FileUploadToInputText';
+import { downloadConcordanceResults, downloadConcordanceResultsCSV } from '../utils/downloadUtils';
 
 interface ConcordanceEntry {
     left_context: string;
@@ -64,6 +65,14 @@ export function Concordance() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleDownloadJSON = () => {
+        downloadConcordanceResults(results, keyword, windowSize, text);
+    };
+
+    const handleDownloadCSV = () => {
+        downloadConcordanceResultsCSV(results);
     };
 
     return (
@@ -168,6 +177,22 @@ export function Concordance() {
                             ))}
                         </tbody>
                     </table>
+                    <div className="flex flex-col sm:flex-row items-center justify-end space-y-2 sm:space-y-0 sm:space-x-2 mt-4">
+                        <button
+                            onClick={handleDownloadJSON}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <Download className="h-4 w-4 mr-2" />
+                            Download JSON
+                        </button>
+                        <button
+                            onClick={handleDownloadCSV}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <FileSpreadsheet className="h-4 w-4 mr-2" />
+                            Download CSV
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

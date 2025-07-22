@@ -50,6 +50,15 @@ const TidyTree: React.FC<TidyTreeProps> = ({ data, width = 1000, height = 800 })
         const g = svg.append('g')
             .attr('transform', `translate(${xOffset},${yOffset})`);
 
+        // Add zoom behavior
+        const zoom = d3.zoom<SVGSVGElement, unknown>()
+            .scaleExtent([0.1, 3]) // Min zoom 0.1x, max zoom 3x
+            .on('zoom', (event) => {
+                g.attr('transform', `translate(${event.transform.x + xOffset},${event.transform.y + yOffset}) scale(${event.transform.k})`);
+            });
+
+        svg.call(zoom);
+
         // Draw links
         g.append('g')
             .selectAll('path')
@@ -101,6 +110,19 @@ const TidyTree: React.FC<TidyTreeProps> = ({ data, width = 1000, height = 800 })
             .attr('font-size', 16)
             .attr('font-family', 'Inter,Roboto,Arial,Helvetica,sans-serif')
             .attr('fill', '#222');
+
+        // Add cursor style to indicate interactivity
+        svg.style('cursor', 'grab');
+        svg.on('mousedown', () => svg.style('cursor', 'grabbing'));
+        svg.on('mouseup', () => svg.style('cursor', 'grab'));
+        svg.on('mouseleave', () => svg.style('cursor', 'grab'));
+
+        // Cleanup function
+        return () => {
+            svg.on('mousedown', null);
+            svg.on('mouseup', null);
+            svg.on('mouseleave', null);
+        };
     }, [data, width, height]);
 
     return <svg ref={svgRef} style={{ width: '100%', height: '100%', borderRadius: 12 }} />;
