@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Brain, Loader2, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { apiService, type Sentence } from '../services/api';
 import { Pie, Bar } from 'react-chartjs-2';
@@ -14,6 +14,8 @@ import {
 } from 'chart.js';
 import type { TooltipItem } from 'chart.js';
 import { useInputText } from '../components/useInputText';
+import FileUploadToInputText from '../components/FileUploadToInputText';
+import React from 'react';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
@@ -41,10 +43,33 @@ const SENTIMENT_COLORS: Record<SentimentClass, string> = {
 };
 
 export function SentimentAnalysis() {
+    const WORD_LIMIT = 1000;
     const { inputText: text, setInputText: setText } = useInputText();
     const [results, setResults] = useState<Sentence[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const words = e.target.value.split(/\s+/).filter(Boolean);
+        if (words.length > WORD_LIMIT) {
+            return;
+        }
+        setText(e.target.value);
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+        }
+    };
+
+    // Adjust height when text is set programmatically
+    React.useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+        }
+    }, [text]);
 
     const handleAnalyze = async () => {
         if (!text.trim()) {
@@ -185,17 +210,25 @@ export function SentimentAnalysis() {
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <div className="space-y-4">
+                    <FileUploadToInputText setInputText={setText} />
                     <div>
-                        <label htmlFor="text" className="block text-sm font-medium text-gray-700 mb-2">
-                            Enter your text to analyze
-                        </label>
+                        <div className="flex justify-between items-center mb-2">
+                            <label htmlFor="text" className="block text-sm font-medium text-gray-700">
+                                Enter your text to analyze
+                            </label>
+                            <span className="text-xs text-gray-500">
+                                {text.split(/\s+/).filter(Boolean).length} / {WORD_LIMIT} words
+                            </span>
+                        </div>
                         <textarea
                             id="text"
+                            ref={textareaRef}
                             rows={6}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                             placeholder="Enter text here..."
                             value={text}
-                            onChange={(e) => setText(e.target.value)}
+                            onChange={handleTextareaInput}
+                            onInput={handleTextareaInput}
                         />
                     </div>
 

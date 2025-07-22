@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { BookOpen, Loader2, Search } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useInputText } from '../components/useInputText';
+import FileUploadToInputText from '../components/FileUploadToInputText';
 
 interface ConcordanceEntry {
     left_context: string;
@@ -10,12 +11,34 @@ interface ConcordanceEntry {
 }
 
 export function Concordance() {
+    const WORD_LIMIT = 1000;
     const { inputText: text, setInputText: setText } = useInputText();
     const [keyword, setKeyword] = useState('');
     const [windowSize, setWindowSize] = useState(5);
     const [results, setResults] = useState<ConcordanceEntry[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const words = e.target.value.split(/\s+/).filter(Boolean);
+        if (words.length > WORD_LIMIT) {
+            return;
+        }
+        setText(e.target.value);
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+        }
+    };
+
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+        }
+    }, [text]);
 
     const handleAnalyze = async () => {
         if (!text.trim()) {
@@ -52,17 +75,25 @@ export function Concordance() {
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <div className="space-y-4">
+                    <FileUploadToInputText setInputText={setText} />
                     <div>
-                        <label htmlFor="text" className="block text-sm font-medium text-gray-700 mb-2">
-                            Enter your text
-                        </label>
+                        <div className="flex justify-between items-center mb-2">
+                            <label htmlFor="text" className="block text-sm font-medium text-gray-700">
+                                Enter your text
+                            </label>
+                            <span className="text-xs text-gray-500">
+                                {text.split(/\s+/).filter(Boolean).length} / {WORD_LIMIT} words
+                            </span>
+                        </div>
                         <textarea
                             id="text"
+                            ref={textareaRef}
                             rows={6}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                             placeholder="Enter text to analyze..."
                             value={text}
-                            onChange={e => setText(e.target.value)}
+                            onChange={handleTextareaInput}
+                            onInput={handleTextareaInput}
                         />
                     </div>
                     <div>
