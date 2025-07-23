@@ -69,4 +69,3 @@ Start the server Fontend
 **Fontend:** React, TailwindCSS, 3Djs, Vite, TypeScript
 
 **Backend:** Huggingface, pycorevnlp, FastAPI
-

@@ -7,4 +7,4 @@ export const useInputText = () => {
         throw new Error('useInputText must be used within an InputTextProvider');
     }
     return context;
-}; 
+};

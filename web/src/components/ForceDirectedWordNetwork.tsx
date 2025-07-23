@@ -156,27 +156,27 @@ const ForceDirectedWordNetwork: React.FC<ForceDirectedWordNetworkProps> = ({ nod
                 .attr('stroke-opacity', (d, i) => {
                     // Check if this specific edge is highlighted
                     if (highlightedEdge === i) return 1;
-                    
+
                     // Check if a node is highlighted and this edge connects to it
                     if (highlightedNode) {
                         const sourceId = typeof d.source === 'string' ? d.source : d.source.id;
                         const targetId = typeof d.target === 'string' ? d.target : d.target.id;
                         return (sourceId === highlightedNode || targetId === highlightedNode) ? 1 : 0.3;
                     }
-                    
+
                     return 0.7;
                 })
                 .attr('stroke', (d, i) => {
                     // Check if this specific edge is highlighted
                     if (highlightedEdge === i) return '#2563eb';
-                    
+
                     // Check if a node is highlighted and this edge connects to it
                     if (highlightedNode) {
                         const sourceId = typeof d.source === 'string' ? d.source : d.source.id;
                         const targetId = typeof d.target === 'string' ? d.target : d.target.id;
                         return (sourceId === highlightedNode || targetId === highlightedNode) ? '#2563eb' : colorScale(d.weight);
                     }
-                    
+
                     return colorScale(d.weight);
                 });
             node.each(function (d) {
@@ -239,4 +239,4 @@ const ForceDirectedWordNetwork: React.FC<ForceDirectedWordNetworkProps> = ({ nod
     );
 };
 
-export default ForceDirectedWordNetwork; 
+export default ForceDirectedWordNetwork;

@@ -5,7 +5,7 @@ from internal.common.schemas.free_txt import Sentence
 
 
 class MeaningAnalyzer:
-    
+
     def __init__(self):
         model_path = os.getenv("MODEL_SENTIMENT_PATH", "tabularisai/multilingual-sentiment-analysis")
         self.device = "cuda:4" if torch.cuda.is_available() else "cpu"

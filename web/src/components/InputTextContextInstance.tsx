@@ -5,4 +5,4 @@ interface InputTextContextType {
     setInputText: (text: string) => void;
 }
 
-export const InputTextContext = createContext<InputTextContextType | undefined>(undefined); 
+export const InputTextContext = createContext<InputTextContextType | undefined>(undefined);
