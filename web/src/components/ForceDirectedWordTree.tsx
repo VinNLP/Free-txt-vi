@@ -282,4 +282,4 @@ export const ForceDirectedWordTree = forwardRef<ForceDirectedWordTreeHandle, For
             <svg ref={svgRef} style={{ width: '100%', height: '100%', background: '#f8fafc', borderRadius: 12 }} />
         );
     }
-); 
+);

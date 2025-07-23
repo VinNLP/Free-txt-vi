@@ -108,4 +108,4 @@ export const apiService = {
         const response = await api.post('/word_network', request);
         return response.data;
     },
-}; 
+};

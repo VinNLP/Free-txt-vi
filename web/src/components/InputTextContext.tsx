@@ -18,4 +18,4 @@ export const InputTextProvider = ({ children }: { children: ReactNode }) => {
             {children}
         </InputTextContext.Provider>
     );
-}; 
+};

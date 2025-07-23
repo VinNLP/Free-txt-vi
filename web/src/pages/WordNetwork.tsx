@@ -186,4 +186,4 @@ const WordNetwork: React.FC = () => {
     );
 };
 
-export default WordNetwork; 
+export default WordNetwork;

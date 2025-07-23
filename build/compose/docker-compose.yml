@@ -2,7 +2,7 @@ services:
   api:
     image: ${PROJECT_NAME}/backend:base
     container_name: ${PROJECT_NAME}-api
-    ports: 
+    ports:
       - ${PORT}:8080
     volumes:
       - ../../api:/api
@@ -11,7 +11,7 @@ services:
       - MODEL_SUM_PATH=/models/qwen2.5-0.5b-instruct
       - MODEL_SENTIMENT_PATH=/models/multilingual-sentiment-analysis
       - JVM_PATH=/usr/lib/jvm/default-java/lib/server/libjvm.so
-  
+
   web:
     build:
       context: ../..

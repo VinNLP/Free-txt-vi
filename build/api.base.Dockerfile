@@ -38,7 +38,7 @@ RUN python -c "import os; \
     model = AutoModelForSequenceClassification.from_pretrained('tabularisai/multilingual-sentiment-analysis'); \
     model.save_pretrained('/models/multilingual-sentiment-analysis'); \
     tokenizer.save_pretrained('/models/multilingual-sentiment-analysis')"
-        
+
 RUN python -c "import os; \
     from transformers import AutoModelForCausalLM, AutoTokenizer; \
     print('Downloading Qwen2.5-0.5B-Instruct model...'); \

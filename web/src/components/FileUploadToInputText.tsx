@@ -172,4 +172,4 @@ const FileUploadToInputText: React.FC<FileUploadToInputTextProps> = ({ setInputT
   );
 };
 
-export default FileUploadToInputText; 
+export default FileUploadToInputText;

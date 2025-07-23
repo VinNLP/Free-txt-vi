@@ -6,11 +6,11 @@
 
 ## 📋 Table of Contents
 
-1. [Code of Conduct](#-code-of-conduct)  
-2. [Getting Started](#-getting-started)  
-3. [How to Contribute](#-how-to-contribute)  
-4. [Development Guidelines](#-development-guidelines)  
-5. [Pull Request Process](#-pull-request-process)  
+1. [Code of Conduct](#-code-of-conduct)
+2. [Getting Started](#-getting-started)
+3. [How to Contribute](#-how-to-contribute)
+4. [Development Guidelines](#-development-guidelines)
+5. [Pull Request Process](#-pull-request-process)
 6. [Community](#-community)
 
 ---
