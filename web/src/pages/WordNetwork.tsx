@@ -27,6 +27,7 @@ const WordNetwork: React.FC = () => {
     const [network, setNetwork] = useState<WordNetworkResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [threshold, setThreshold] = useState(0.85);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const networkRef = useRef<HTMLDivElement>(null);
 
@@ -38,7 +39,7 @@ const WordNetwork: React.FC = () => {
         setLoading(true);
         setError('');
         try {
-            const res = await apiService.wordNetwork({ text, threshold: 0.7 });
+            const res = await apiService.wordNetwork({ text, threshold });
             setNetwork(res);
         } catch (err) {
             setError('Failed to generate word network. Please try again.');
@@ -133,6 +134,29 @@ const WordNetwork: React.FC = () => {
                             onChange={handleTextareaInput}
                             onInput={handleTextareaInput}
                         />
+                    </div>
+                    <div>
+                        <label htmlFor="threshold" className="block text-sm font-medium text-gray-700 mb-2">
+                            Similarity Threshold
+                        </label>
+                        <div className="flex items-center space-x-4">
+                            <input
+                                type="range"
+                                id="threshold"
+                                min="0.1"
+                                max="1.0"
+                                step="0.05"
+                                value={threshold}
+                                onChange={(e) => setThreshold(parseFloat(e.target.value))}
+                                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                            />
+                            <span className="text-sm font-medium text-gray-700 min-w-[3rem]">
+                                {threshold.toFixed(2)}
+                            </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                            Higher values show only stronger word relationships (0.1 - 1.0)
+                        </p>
                     </div>
                     <button
                         onClick={handleGenerateNetwork}
