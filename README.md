@@ -50,7 +50,7 @@ Create .env file and put backend url like this in the file
   VITE_BACKEND_URL=http://0.0.0.0:8000
 ```
 
-Install dependencies Fontend
+Install dependencies Fontend (you should install Node.js >= 20 first)
 
 ```bash
   cd web
