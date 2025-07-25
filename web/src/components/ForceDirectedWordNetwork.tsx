@@ -71,6 +71,9 @@ const ForceDirectedWordNetwork: React.FC<ForceDirectedWordNetworkProps> = ({ nod
             .attr('stroke-opacity', (d, i) => highlightedEdge === i ? 1 : 0.7)
             .attr('stroke-width', d => thicknessScale(d.weight))
             .attr('stroke', d => colorScale(d.weight))
+            .attr('data-weight', d => d.weight.toFixed(3))
+            .attr('data-source', d => typeof d.source === 'string' ? d.source : d.source.id)
+            .attr('data-target', d => typeof d.target === 'string' ? d.target : d.target.id)
             .on('mouseover', function (event, d) {
                 // Show weight on hover
                 setTooltip({
@@ -106,6 +109,7 @@ const ForceDirectedWordNetwork: React.FC<ForceDirectedWordNetworkProps> = ({ nod
             .selectAll<SVGRectElement, Node>('rect')
             .data(nodes)
             .join('rect')
+            .attr('id', d => d.id)
             .attr('fill', '#60a5fa')
             .attr('rx', 6)
             .attr('ry', 6)
@@ -141,6 +145,7 @@ const ForceDirectedWordNetwork: React.FC<ForceDirectedWordNetworkProps> = ({ nod
             .data(nodes)
             .join('text')
             .text((d) => d.id)
+            .attr('data-node', d => d.id)
             .attr('font-size', 14)
             .attr('font-family', 'Inter,Roboto,Arial,Helvetica,sans-serif')
             .attr('text-anchor', 'middle')

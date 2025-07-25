@@ -6,7 +6,7 @@ import { ForceDirectedWordTree } from '../components/ForceDirectedWordTree';
 import type { ForceDirectedWordTreeHandle } from '../components/ForceDirectedWordTree';
 import { useInputText } from '../components/useInputText';
 import FileUploadToInputText from '../components/FileUploadToInputText';
-import { downloadWordTree, downloadSVGAsPNG } from '../utils/downloadUtils';
+import { downloadWordTree, downloadSVGAsSVG } from '../utils/downloadUtils';
 
 // Convert backend nested dict to react-d3-tree format
 interface D3TreeNode {
@@ -93,20 +93,20 @@ export function WordTree() {
         }
     };
 
-    const handleDownloadTidyTreePNG = () => {
+    const handleDownloadTidyTreeSVG = () => {
         if (tidyTreeRef.current) {
             const svg = tidyTreeRef.current.querySelector('svg');
             if (svg) {
-                downloadSVGAsPNG(svg, 'word-tree-tidy');
+                downloadSVGAsSVG(svg, 'word-tree-tidy');
             }
         }
     };
 
-    const handleDownloadForceTreePNG = () => {
+    const handleDownloadForceTreeSVG = () => {
         if (forceTreeRef.current) {
             const svg = forceTreeRef.current.querySelector('svg');
             if (svg) {
-                downloadSVGAsPNG(svg, 'word-tree-force');
+                downloadSVGAsSVG(svg, 'word-tree-force');
             }
         }
     };
@@ -209,18 +209,18 @@ export function WordTree() {
                                 Download JSON
                             </button>
                             <button
-                                onClick={handleDownloadTidyTreePNG}
+                                onClick={handleDownloadTidyTreeSVG}
                                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
                             >
                                 <BarChart3 className="h-4 w-4 mr-2" />
-                                Download Tidy Tree PNG
+                                Download Tidy Tree SVG
                             </button>
                             <button
-                                onClick={handleDownloadForceTreePNG}
+                                onClick={handleDownloadForceTreeSVG}
                                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                             >
                                 <BarChart3 className="h-4 w-4 mr-2" />
-                                Download Force Tree PNG
+                                Download Force Tree SVG
                             </button>
                         </div>
                     </div>

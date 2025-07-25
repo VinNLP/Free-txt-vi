@@ -4,7 +4,7 @@ import { apiService } from '../services/api';
 import ForceDirectedWordNetwork from '../components/ForceDirectedWordNetwork.tsx';
 import { useInputText } from '../components/useInputText';
 import FileUploadToInputText from '../components/FileUploadToInputText';
-import { downloadWordNetwork, downloadSVGAsPNG } from '../utils/downloadUtils';
+import { downloadWordNetwork, downloadSVGAsSVG } from '../utils/downloadUtils';
 
 interface Node {
     id: string;
@@ -54,11 +54,11 @@ const WordNetwork: React.FC = () => {
         }
     };
 
-    const handleDownloadPNG = () => {
+    const handleDownloadSVG = () => {
         if (networkRef.current) {
             const svg = networkRef.current.querySelector('svg');
             if (svg) {
-                downloadSVGAsPNG(svg, 'word-network');
+                downloadSVGAsSVG(svg, 'word-network', filteredNetwork);
             }
         }
     };
@@ -169,11 +169,11 @@ const WordNetwork: React.FC = () => {
                                 Download Network (JSON)
                             </button>
                             <button
-                                onClick={handleDownloadPNG}
+                                onClick={handleDownloadSVG}
                                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
                             >
                                 <BarChart3 className="h-4 w-4 mr-2" />
-                                Download Network (PNG)
+                                Download Network (SVG)
                             </button>
                         </div>
                     </div>
