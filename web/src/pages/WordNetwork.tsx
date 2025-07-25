@@ -51,7 +51,7 @@ const WordNetwork: React.FC = () => {
 
     const handleDownloadJSON = () => {
         if (network) {
-            downloadWordNetwork(network, text);
+            downloadWordNetwork(network);
         }
     };
 
