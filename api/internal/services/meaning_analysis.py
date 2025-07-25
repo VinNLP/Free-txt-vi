@@ -1,5 +1,6 @@
 import torch
 import os
+import re
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from internal.common.schemas.free_txt import Sentence
 
@@ -15,7 +16,7 @@ class MeaningAnalyzer:
         ).to(self.device)
 
     async def meaning_analyse(self, input_text: str):
-        texts = input_text.split(".")
+        texts = re.split(r'[.!?]+', input_text)
         texts = [text.strip() for text in texts if text.strip()]
 
         if not texts:

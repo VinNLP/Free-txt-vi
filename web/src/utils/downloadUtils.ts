@@ -1423,14 +1423,10 @@ export const downloadConcordanceResultsCSV = (results: unknown[]) => {
   downloadAsCSV(csvData, 'concordance-results');
 };
 
-export const downloadWordNetwork = (network: unknown, originalText: string) => {
-  const data = {
-    originalText,
-    analysisDate: new Date().toISOString(),
-    nodes: (network as { nodes: unknown }).nodes,
-    edges: (network as { edges: unknown }).edges
-  };
-  downloadAsJSON(data, 'word-network');
+export const downloadWordNetwork = (network: unknown) => {
+  // Download the network data exactly as it comes from the backend
+  // without adding extra metadata to match the backend output format
+  downloadAsJSON(network, 'word-network');
 };
 
 export const downloadWordTree = (treeData: unknown, originalText: string) => {
