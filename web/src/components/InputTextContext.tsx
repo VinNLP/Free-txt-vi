@@ -8,13 +8,15 @@ export const InputTextProvider = ({ children }: { children: ReactNode }) => {
         return localStorage.getItem('inputText') || '';
     });
 
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
     useEffect(() => {
         // Optional: save to localStorage
         localStorage.setItem('inputText', inputText);
     }, [inputText]);
 
     return (
-        <InputTextContext.Provider value={{ inputText, setInputText }}>
+        <InputTextContext.Provider value={{ inputText, setInputText, selectedFile, setSelectedFile }}>
             {children}
         </InputTextContext.Provider>
     );

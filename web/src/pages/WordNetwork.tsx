@@ -4,7 +4,7 @@ import { apiService } from '../services/api';
 import ForceDirectedWordNetwork from '../components/ForceDirectedWordNetwork.tsx';
 import { useInputText } from '../components/useInputText';
 import FileUploadToInputText from '../components/FileUploadToInputText';
-import { downloadWordNetwork, downloadSVGAsPNG } from '../utils/downloadUtils';
+import { downloadWordNetwork, downloadSVGAsSVG } from '../utils/downloadUtils';
 
 interface Node {
     id: string;
@@ -27,6 +27,7 @@ const WordNetwork: React.FC = () => {
     const [network, setNetwork] = useState<WordNetworkResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [threshold, setThreshold] = useState(0.85);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const networkRef = useRef<HTMLDivElement>(null);
 
@@ -38,7 +39,7 @@ const WordNetwork: React.FC = () => {
         setLoading(true);
         setError('');
         try {
-            const res = await apiService.wordNetwork({ text, threshold: 0.7 });
+            const res = await apiService.wordNetwork({ text, threshold });
             setNetwork(res);
         } catch (err) {
             setError('Failed to generate word network. Please try again.');
@@ -54,11 +55,11 @@ const WordNetwork: React.FC = () => {
         }
     };
 
-    const handleDownloadPNG = () => {
+    const handleDownloadSVG = () => {
         if (networkRef.current) {
             const svg = networkRef.current.querySelector('svg');
             if (svg) {
-                downloadSVGAsPNG(svg, 'word-network');
+                downloadSVGAsSVG(svg, 'word-network', filteredNetwork);
             }
         }
     };
@@ -134,6 +135,29 @@ const WordNetwork: React.FC = () => {
                             onInput={handleTextareaInput}
                         />
                     </div>
+                    <div>
+                        <label htmlFor="threshold" className="block text-sm font-medium text-gray-700 mb-2">
+                            Similarity Threshold
+                        </label>
+                        <div className="flex items-center space-x-4">
+                            <input
+                                type="range"
+                                id="threshold"
+                                min="0.1"
+                                max="1.0"
+                                step="0.05"
+                                value={threshold}
+                                onChange={(e) => setThreshold(parseFloat(e.target.value))}
+                                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                            />
+                            <span className="text-sm font-medium text-gray-700 min-w-[3rem]">
+                                {threshold.toFixed(2)}
+                            </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                            Higher values show only stronger word relationships (0.1 - 1.0)
+                        </p>
+                    </div>
                     <button
                         onClick={handleGenerateNetwork}
                         disabled={loading}
@@ -169,11 +193,11 @@ const WordNetwork: React.FC = () => {
                                 Download Network (JSON)
                             </button>
                             <button
-                                onClick={handleDownloadPNG}
+                                onClick={handleDownloadSVG}
                                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
                             >
                                 <BarChart3 className="h-4 w-4 mr-2" />
-                                Download Network (PNG)
+                                Download Network (SVG)
                             </button>
                         </div>
                     </div>
