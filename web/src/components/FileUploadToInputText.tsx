@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 import type { ParseResult } from 'papaparse';
+import { useInputText } from './useInputText';
 
 // Use a local worker file for Vite compatibility
 GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
@@ -36,29 +37,29 @@ function truncateText(text: string, wordLimit: number): { truncatedText: string,
 }
 
 const FileUploadToInputText: React.FC<FileUploadToInputTextProps> = ({ setInputText }) => {
-  const [file, setFile] = useState<File | null>(null);
+  const { selectedFile, setSelectedFile } = useInputText();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log('handleFileChange called');
     const selectedFile = e.target.files?.[0] || null;
-    setFile(selectedFile);
+    setSelectedFile(selectedFile);
     setError(null);
     e.target.value = '';
   };
 
   const handleProcessFile = async () => {
-    console.log('handleProcessFile called, file:', file);
-    if (!file) {
+    console.log('handleProcessFile called, file:', selectedFile);
+    if (!selectedFile) {
       console.log('No file to process!');
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      console.log('Processing file:', file.name, 'type:', ext);
+      const ext = selectedFile.name.split('.').pop()?.toLowerCase();
+      console.log('Processing file:', selectedFile.name, 'type:', ext);
       if (!ext) throw new Error('Unknown file type');
       if (ext === 'txt') {
         // Text file parsing
@@ -69,7 +70,7 @@ const FileUploadToInputText: React.FC<FileUploadToInputTextProps> = ({ setInputT
             resolve(result);
           };
           reader.onerror = () => reject(new Error('Failed to read text file'));
-          reader.readAsText(file);
+          reader.readAsText(selectedFile);
         });
         console.log('TXT parsed text:', text);
         const processedText = splitTextIntoSentences(text.trim());
@@ -78,7 +79,7 @@ const FileUploadToInputText: React.FC<FileUploadToInputTextProps> = ({ setInputT
         setError(message);
       } else if (ext === 'pdf') {
         // PDF parsing
-        const arrayBuffer = await file.arrayBuffer();
+        const arrayBuffer = await selectedFile.arrayBuffer();
         const pdf = await getDocument({ data: arrayBuffer }).promise;
         let text = '';
         for (let i = 1; i <= pdf.numPages; i++) {
@@ -94,7 +95,7 @@ const FileUploadToInputText: React.FC<FileUploadToInputTextProps> = ({ setInputT
       } else if (ext === 'csv') {
         // CSV parsing
         await new Promise<void>((resolve, reject) => {
-          Papa.parse(file, {
+          Papa.parse(selectedFile, {
             complete: (results: ParseResult<unknown>) => {
               const text = (results.data as string[][]).map((row) => (Array.isArray(row) ? row.join(',') : String(row))).join('\n');
               console.log('CSV parsed text:', text);
@@ -113,7 +114,7 @@ const FileUploadToInputText: React.FC<FileUploadToInputTextProps> = ({ setInputT
         });
       } else if (ext === 'xlsx' || ext === 'xls') {
         // Excel parsing
-        const arrayBuffer = await file.arrayBuffer();
+        const arrayBuffer = await selectedFile.arrayBuffer();
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
         let text = '';
         workbook.SheetNames.forEach((sheetName) => {
@@ -143,8 +144,13 @@ const FileUploadToInputText: React.FC<FileUploadToInputTextProps> = ({ setInputT
     }
   };
 
+  const handleClearFile = () => {
+    setSelectedFile(null);
+    setError(null);
+  };
+
   // Debug: log file state before rendering button
-  console.log('File state before render:', file);
+  console.log('File state before render:', selectedFile);
 
   return (
     <div className="mb-2">
@@ -155,18 +161,29 @@ const FileUploadToInputText: React.FC<FileUploadToInputTextProps> = ({ setInputT
         onChange={handleFileChange}
         className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
       />
-      <div className="mt-1 text-xs text-gray-600">File state: {file ? file.name : 'none'}</div>
-      {file && (
-        <div className="mt-1 text-xs text-gray-600">Selected file: {file.name}</div>
+      <div className="mt-1 text-xs text-gray-600">File state: {selectedFile ? selectedFile.name : 'none'}</div>
+      {selectedFile && (
+        <div className="mt-1 text-xs text-gray-600">Selected file: {selectedFile.name}</div>
       )}
-      <button
-        type="button"
-        onClick={handleProcessFile}
-        disabled={!file || loading}
-        className="mt-2 px-4 py-2 rounded bg-blue-600 text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {loading ? 'Loading...' : 'Load File Content'}
-      </button>
+      <div className="mt-2 flex gap-2">
+        <button
+          type="button"
+          onClick={handleProcessFile}
+          disabled={!selectedFile || loading}
+          className="px-4 py-2 rounded bg-blue-600 text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? 'Loading...' : 'Load File Content'}
+        </button>
+        {selectedFile && (
+          <button
+            type="button"
+            onClick={handleClearFile}
+            className="px-4 py-2 rounded bg-gray-500 text-white text-sm font-medium hover:bg-gray-600"
+          >
+            Clear File
+          </button>
+        )}
+      </div>
       {error && <div className="mt-1 text-xs text-yellow-600">{error}</div>}
     </div>
   );
