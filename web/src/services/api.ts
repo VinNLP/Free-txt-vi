@@ -58,25 +58,7 @@ export interface ConcordanceResponse {
     results: ConcordanceEntry[];
 }
 
-export interface WordNetworkRequest {
-    text: string;
-    threshold?: number;
-}
 
-export interface WordNetworkNode {
-    id: string;
-}
-
-export interface WordNetworkEdge {
-    source: string;
-    target: string;
-    weight: number;
-}
-
-export interface WordNetworkResponse {
-    nodes: WordNetworkNode[];
-    edges: WordNetworkEdge[];
-}
 
 export const apiService = {
     // Sentiment Analysis
@@ -103,9 +85,5 @@ export const apiService = {
         return response.data;
     },
 
-    // Word Network
-    async wordNetwork(request: WordNetworkRequest): Promise<WordNetworkResponse> {
-        const response = await api.post('/word_network', request);
-        return response.data;
-    },
+
 };
