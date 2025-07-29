@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Brain, FileText, TreePine, BookOpen, Share2 } from 'lucide-react';
+import { Brain, FileText, TreePine, BookOpen } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface LayoutProps {
@@ -12,7 +12,6 @@ const navigation = [
     { name: 'Summarization', href: '/summarization', icon: FileText },
     { name: 'Word Tree', href: '/word-tree', icon: TreePine },
     { name: 'Concordance', href: '/concordance', icon: BookOpen },
-    { name: 'Word Network', href: '/word-network', icon: Share2 },
 ];
 
 export function Layout({ children }: LayoutProps) {

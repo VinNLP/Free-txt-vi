@@ -711,7 +711,7 @@ const createInteractiveBarChartSVG = (data: any, options: any, width: number, he
   return svg;
 };
 
-// SVG download utility - Direct SVG download (for WordTree/WordNetwork)
+// SVG download utility - Direct SVG download (for WordTree)
 export const downloadSVGAsSVG = (svgElement: SVGSVGElement, filename: string, networkData?: any) => {
   console.log('🚀 downloadSVGAsSVG function called!');
   console.log('=== downloadSVGAsSVG Debug ===');
@@ -1423,11 +1423,7 @@ export const downloadConcordanceResultsCSV = (results: unknown[]) => {
   downloadAsCSV(csvData, 'concordance-results');
 };
 
-export const downloadWordNetwork = (network: unknown) => {
-  // Download the network data exactly as it comes from the backend
-  // without adding extra metadata to match the backend output format
-  downloadAsJSON(network, 'word-network');
-};
+
 
 export const downloadWordTree = (treeData: unknown, originalText: string) => {
   const data = {

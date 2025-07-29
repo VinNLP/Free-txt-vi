@@ -93,23 +93,3 @@ class ConcordanceEntry(BaseModel):
 
 class ConcordanceResponse(BaseModel):
     results: List[ConcordanceEntry] = Field(description="List of concordance results")
-
-
-class WordNetworkRequest(BaseModel):
-    text: str = Field(description="Input text to analyze for word network")
-    threshold: float = Field(default=0.7, description="Similarity threshold for edges")
-
-
-class WordNetworkNode(BaseModel):
-    id: str = Field(description="Word node")
-
-
-class WordNetworkEdge(BaseModel):
-    source: str = Field(description="Source word")
-    target: str = Field(description="Target word")
-    weight: float = Field(description="Similarity weight")
-
-
-class WordNetworkResponse(BaseModel):
-    nodes: List[WordNetworkNode] = Field(description="List of word nodes")
-    edges: List[WordNetworkEdge] = Field(description="List of edges between words")

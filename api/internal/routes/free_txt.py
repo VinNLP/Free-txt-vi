@@ -8,8 +8,6 @@ from internal.common.schemas.free_txt import (
     WordTreeResponse,
     WordUseRelationshipsResponse,
     ConcordanceResponse,
-    WordNetworkRequest,
-    WordNetworkResponse,
 )
 from internal.handler.free_txt import FreeTxtHandler
 
@@ -83,13 +81,4 @@ class FreeTxtRoute:
             response_model=ConcordanceResponse,
             summary="Text Concordance",
             description="Return keyword with N words before and after for each occurrence.",
-        )
-
-        self.router.add_api_route(
-            path="/word_network",
-            endpoint=self.handler.word_network,
-            methods=["POST"],
-            response_model=WordNetworkResponse,
-            summary="Word Network",
-            description="Create Word Network using word similarity",
         )
