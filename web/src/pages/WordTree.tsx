@@ -31,6 +31,11 @@ function convertToD3Tree(node: unknown, maxLevel = 3, level = 0): D3TreeNode[] {
     return children;
 }
 
+// Helper function to format word display (remove underscores)
+function formatWordDisplay(word: string): string {
+    return word.replace(/_/g, ' ');
+}
+
 export function WordTree() {
     const WORD_LIMIT = 1000;
     const { inputText: text, setInputText: setText } = useInputText();
@@ -61,26 +66,41 @@ export function WordTree() {
         }
     }, [text]);
 
-    const handleGenerateTree = async () => {
+    const handleGenerateTree = async (newKeyword?: string) => {
+        const targetKeyword = newKeyword || keyword;
         if (!text.trim()) {
             setError('Please enter some text');
             return;
         }
-        if (!keyword.trim()) {
+        if (!targetKeyword.trim()) {
             setError('Please enter a keyword');
             return;
         }
         setLoading(true);
         setError('');
         try {
-            const response = await apiService.createWordTree(text, keyword);
+            const response = await apiService.createWordTree(text, targetKeyword);
             setTreeData(response);
+            if (newKeyword) {
+                setKeyword(newKeyword);
+            }
         } catch (err) {
             setError('Failed to generate word tree. Please try again.');
             console.error('Word tree error:', err);
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleNodeClick = async (clickedWord: string) => {
+        if (clickedWord === keyword) {
+            return; // Don't regenerate if clicking the same keyword
+        }
+        // Format the clicked word to remove underscores for display and API call
+        const formattedWord = formatWordDisplay(clickedWord);
+        await handleGenerateTree(formattedWord);
+        // Set the formatted word in the input field
+        setKeyword(formattedWord);
     };
 
     const handleDownloadJSON = () => {
@@ -159,7 +179,7 @@ export function WordTree() {
                     </div>
 
                     <button
-                        onClick={handleGenerateTree}
+                        onClick={() => handleGenerateTree()}
                         disabled={loading}
                         className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -204,9 +224,19 @@ export function WordTree() {
                             </button>
                         </div>
                     </div>
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                        <p className="text-sm text-blue-800">
+                            <strong>Tip:</strong> Click on any word in the tree to explore its context and generate a new tree with that word as the keyword.
+                        </p>
+                    </div>
                     <div ref={tidyTreeRef} style={{ width: '100%', height: '800px' }}>
                         <h3 className="text-lg font-semibold mb-2">Tidy Tree Layout</h3>
-                        <TidyTree data={d3TreeData} width={1000} height={800} />
+                        <TidyTree
+                            data={d3TreeData}
+                            width={1000}
+                            height={800}
+                            onNodeClick={handleNodeClick}
+                        />
                     </div>
                 </div>
             )}

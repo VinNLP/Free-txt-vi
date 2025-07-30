@@ -11,18 +11,24 @@ interface TidyTreeProps {
     data: TidyTreeNode[];
     width?: number;
     height?: number;
+    onNodeClick?: (word: string) => void;
 }
 
 const LEFT_COLOR = '#fde68a'; // light orange
 const RIGHT_COLOR = '#bbf7d0'; // light green
 const ROOT_COLOR = '#60a5fa'; // blue
 
-const TidyTree: React.FC<TidyTreeProps> = ({ data, width = 1000, height = 800 }) => {
+const TidyTree: React.FC<TidyTreeProps> = ({ data, width = 1000, height = 800, onNodeClick }) => {
     const svgRef = useRef<SVGSVGElement | null>(null);
 
     useEffect(() => {
         if (!data || !svgRef.current) return;
         d3.select(svgRef.current).selectAll('*').remove();
+
+        // Helper function to format word display
+        function formatWordDisplay(word: string): string {
+            return word.replace(/_/g, ' ');
+        }
 
         // Convert data to d3.hierarchy
         const root = d3.hierarchy<TidyTreeNode>(data[0]);
@@ -59,6 +65,29 @@ const TidyTree: React.FC<TidyTreeProps> = ({ data, width = 1000, height = 800 })
 
         svg.call(zoom);
 
+        // Helper to get node count/frequency
+        function getNodeCount(d: d3.HierarchyPointNode<TidyTreeNode>): number {
+            const count = d.data.attributes?.count;
+            return typeof count === 'number' ? count : 1;
+        }
+
+        // Helper to calculate node dimensions based on count
+        function getNodeDimensions(d: d3.HierarchyPointNode<TidyTreeNode>) {
+            const count = getNodeCount(d);
+            const displayWord = formatWordDisplay(d.data.name);
+            const baseWidth = Math.max(displayWord.length * 8, 40);
+            const baseHeight = 36;
+
+            // Scale factor based on count (logarithmic scaling to prevent extreme sizes)
+            const scaleFactor = Math.min(1 + Math.log(count + 1) * 0.3, 2.5);
+
+            return {
+                width: baseWidth * scaleFactor,
+                height: baseHeight * scaleFactor,
+                fontSize: Math.min(16 * scaleFactor, 24) // Cap font size at 24
+            };
+        }
+
         // Draw links
         g.append('g')
             .selectAll('path')
@@ -87,6 +116,21 @@ const TidyTree: React.FC<TidyTreeProps> = ({ data, width = 1000, height = 800 })
             return getNodeColor(d.parent);
         }
 
+        // Create tooltip
+        const tooltip = d3.select('body')
+            .append('div')
+            .attr('class', 'tooltip')
+            .style('position', 'absolute')
+            .style('background', 'rgba(0, 0, 0, 0.8)')
+            .style('color', 'white')
+            .style('padding', '8px 12px')
+            .style('border-radius', '6px')
+            .style('font-size', '14px')
+            .style('font-family', 'Inter,Roboto,Arial,Helvetica,sans-serif')
+            .style('pointer-events', 'none')
+            .style('z-index', '1000')
+            .style('opacity', 0);
+
         // Draw nodes as rectangles
         const node = g.append('g')
             .selectAll('g')
@@ -95,21 +139,44 @@ const TidyTree: React.FC<TidyTreeProps> = ({ data, width = 1000, height = 800 })
             .attr('transform', d => `translate(${d.y ?? 0},${d.x ?? 0})`);
 
         node.append('rect')
-            .attr('x', d => -Math.max((d.data.name.length * 8), 40) / 2)
-            .attr('y', -18)
-            .attr('width', d => Math.max((d.data.name.length * 8), 40))
-            .attr('height', 36)
+            .attr('x', d => -getNodeDimensions(d).width / 2)
+            .attr('y', d => -getNodeDimensions(d).height / 2)
+            .attr('width', d => getNodeDimensions(d).width)
+            .attr('height', d => getNodeDimensions(d).height)
             .attr('rx', 6)
             .attr('ry', 6)
-            .attr('fill', getNodeColor);
+            .attr('fill', getNodeColor)
+            .style('cursor', 'pointer')
+            .on('mouseover', function(event, d) {
+                const count = getNodeCount(d);
+                const displayWord = formatWordDisplay(d.data.name);
+                tooltip.transition()
+                    .duration(200)
+                    .style('opacity', 0.9);
+                tooltip.html(`<strong>${displayWord}</strong><br/>Frequency: ${count}<br/><em>Click to explore this word</em>`)
+                    .style('left', (event.pageX + 10) + 'px')
+                    .style('top', (event.pageY - 28) + 'px');
+            })
+            .on('mouseout', function() {
+                tooltip.transition()
+                    .duration(500)
+                    .style('opacity', 0);
+            })
+            .on('click', function(event, d) {
+                event.stopPropagation();
+                if (onNodeClick) {
+                    onNodeClick(d.data.name);
+                }
+            });
 
         node.append('text')
-            .text(d => d.data.name)
+            .text(d => formatWordDisplay(d.data.name))
             .attr('text-anchor', 'middle')
             .attr('dominant-baseline', 'middle')
-            .attr('font-size', 16)
+            .attr('font-size', d => getNodeDimensions(d).fontSize)
             .attr('font-family', 'Inter,Roboto,Arial,Helvetica,sans-serif')
-            .attr('fill', '#222');
+            .attr('fill', '#222')
+            .style('pointer-events', 'none');
 
         // Add cursor style to indicate interactivity
         svg.style('cursor', 'grab');
@@ -122,8 +189,9 @@ const TidyTree: React.FC<TidyTreeProps> = ({ data, width = 1000, height = 800 })
             svg.on('mousedown', null);
             svg.on('mouseup', null);
             svg.on('mouseleave', null);
+            tooltip.remove();
         };
-    }, [data, width, height]);
+    }, [data, width, height, onNodeClick]);
 
     return <svg ref={svgRef} style={{ width: '100%', height: '100%', borderRadius: 12 }} />;
 };
