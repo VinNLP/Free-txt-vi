@@ -2,8 +2,6 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { TreePine, Loader2, Search, Download, BarChart3 } from 'lucide-react';
 import { apiService, type WordTreeResponse } from '../services/api';
 import TidyTree from '../components/TidyTree';
-import { ForceDirectedWordTree } from '../components/ForceDirectedWordTree';
-import type { ForceDirectedWordTreeHandle } from '../components/ForceDirectedWordTree';
 import { useInputText } from '../components/useInputText';
 import FileUploadToInputText from '../components/FileUploadToInputText';
 import { downloadWordTree, downloadSVGAsSVG } from '../utils/downloadUtils';
@@ -41,10 +39,8 @@ export function WordTree() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const forceRef = useRef<ForceDirectedWordTreeHandle>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const tidyTreeRef = useRef<HTMLDivElement>(null);
-    const forceTreeRef = useRef<HTMLDivElement>(null);
 
     const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const words = e.target.value.split(/\s+/).filter(Boolean);
@@ -98,15 +94,6 @@ export function WordTree() {
             const svg = tidyTreeRef.current.querySelector('svg');
             if (svg) {
                 downloadSVGAsSVG(svg, 'word-tree-tidy');
-            }
-        }
-    };
-
-    const handleDownloadForceTreeSVG = () => {
-        if (forceTreeRef.current) {
-            const svg = forceTreeRef.current.querySelector('svg');
-            if (svg) {
-                downloadSVGAsSVG(svg, 'word-tree-force');
             }
         }
     };
@@ -215,46 +202,11 @@ export function WordTree() {
                                 <BarChart3 className="h-4 w-4 mr-2" />
                                 Download Tidy Tree SVG
                             </button>
-                            <button
-                                onClick={handleDownloadForceTreeSVG}
-                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                            >
-                                <BarChart3 className="h-4 w-4 mr-2" />
-                                Download Force Tree SVG
-                            </button>
                         </div>
                     </div>
                     <div ref={tidyTreeRef} style={{ width: '100%', height: '800px' }}>
                         <h3 className="text-lg font-semibold mb-2">Tidy Tree Layout</h3>
                         <TidyTree data={d3TreeData} width={1000} height={800} />
-                    </div>
-                    <div style={{ height: 40 }} />
-                    <div ref={forceTreeRef} style={{ width: '100%', height: '800px' }}>
-                        <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-lg font-semibold">Force-Directed Graph</h3>
-                            <button
-                                type="button"
-                                className="px-3 py-1 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                onClick={() => forceRef.current?.reset()}
-                            >
-                                Reset Layout
-                            </button>
-                        </div>
-                        <div className="flex items-center gap-6 mb-4">
-                            <span className="flex items-center gap-1">
-                                <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', background: '#2563eb', border: '2px solid #2563eb' }}></span>
-                                <span className="ml-1 text-gray-800">Keyword/Root</span>
-                            </span>
-                            <span className="flex items-center gap-1">
-                                <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', background: '#f59e42', border: '2px solid #f59e42' }}></span>
-                                <span className="ml-1 text-gray-800">Left Context</span>
-                            </span>
-                            <span className="flex items-center gap-1">
-                                <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', background: '#10b981', border: '2px solid #10b981' }}></span>
-                                <span className="ml-1 text-gray-800">Right Context</span>
-                            </span>
-                        </div>
-                        <ForceDirectedWordTree ref={forceRef} treeData={treeData} width={800} height={700} />
                     </div>
                 </div>
             )}
