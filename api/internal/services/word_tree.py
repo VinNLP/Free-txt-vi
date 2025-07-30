@@ -2,7 +2,23 @@ import py_vncorenlp
 from collections import defaultdict
 from typing import List, Dict
 import string
+import re
 from internal.services.vncorenlp_singleton import vncorenlp_model
+
+
+def clean_word(word: str) -> str:
+    """
+    Clean a word by removing apostrophes, quotes, and other unwanted characters.
+    """
+    # Remove various types of quotes and apostrophes
+    word = re.sub(r'[\'′`´]', '', word)  # Remove apostrophes and similar characters
+    word = re.sub(r'[""″]', '', word)    # Remove quotes and similar characters
+    word = re.sub(r'[‛‟]', '', word)     # Remove curly quotes
+    word = re.sub(r'[''‹›]', '', word)   # Remove angle quotes
+    word = re.sub(r'[«»]', '', word)     # Remove guillemets
+    word = re.sub(r'[„"]', '', word)     # Remove double quotes
+    word = re.sub(r'[\u2018\u2019]', '', word)  # Remove single quotes (left and right)
+    return word.strip()
 
 
 class WordTreeNode:
@@ -35,6 +51,10 @@ class WordTree:
     async def build_word_tree(self, text: str, keyword: str, window: int = 5):
         seg_text = self.model.word_segment(text.lower())
         seg_keyword = "".join(self.model.word_segment(keyword.lower()))
+
+        # Clean the keyword
+        seg_keyword = clean_word(seg_keyword)
+
         mod_text = " ".join(seg_text)
         tokens = mod_text.split()
         left_tree = WordTreeNode()
@@ -42,13 +62,19 @@ class WordTree:
         punctuation = set(string.punctuation)
 
         for i, token in enumerate(tokens):
-            if token == seg_keyword:
+            # Clean the token for comparison
+            cleaned_token = clean_word(token)
+            if cleaned_token == seg_keyword:
                 left_context = tokens[max(0, i - window) : i][::-1]
                 right_context = tokens[i + 1 : i + 1 + window]
 
-                # Remove punctuation from context
-                left_context = [w for w in left_context if w not in punctuation]
-                right_context = [w for w in right_context if w not in punctuation]
+                # Remove punctuation and clean words from context
+                left_context = [clean_word(w) for w in left_context if w not in punctuation]
+                right_context = [clean_word(w) for w in right_context if w not in punctuation]
+
+                # Filter out empty words after cleaning
+                left_context = [w for w in left_context if w]
+                right_context = [w for w in right_context if w]
 
                 if left_context:
                     left_tree.insert(left_context)
