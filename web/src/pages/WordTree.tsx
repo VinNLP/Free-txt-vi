@@ -2,8 +2,6 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { TreePine, Loader2, Search, Download, BarChart3 } from 'lucide-react';
 import { apiService, type WordTreeResponse } from '../services/api';
 import TidyTree from '../components/TidyTree';
-import { ForceDirectedWordTree } from '../components/ForceDirectedWordTree';
-import type { ForceDirectedWordTreeHandle } from '../components/ForceDirectedWordTree';
 import { useInputText } from '../components/useInputText';
 import FileUploadToInputText from '../components/FileUploadToInputText';
 import { downloadWordTree, downloadSVGAsSVG } from '../utils/downloadUtils';
@@ -33,6 +31,11 @@ function convertToD3Tree(node: unknown, maxLevel = 3, level = 0): D3TreeNode[] {
     return children;
 }
 
+// Helper function to format word display (remove underscores)
+function formatWordDisplay(word: string): string {
+    return word.replace(/_/g, ' ');
+}
+
 export function WordTree() {
     const WORD_LIMIT = 1000;
     const { inputText: text, setInputText: setText } = useInputText();
@@ -41,10 +44,8 @@ export function WordTree() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const forceRef = useRef<ForceDirectedWordTreeHandle>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const tidyTreeRef = useRef<HTMLDivElement>(null);
-    const forceTreeRef = useRef<HTMLDivElement>(null);
 
     const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const words = e.target.value.split(/\s+/).filter(Boolean);
@@ -65,26 +66,41 @@ export function WordTree() {
         }
     }, [text]);
 
-    const handleGenerateTree = async () => {
+    const handleGenerateTree = async (newKeyword?: string) => {
+        const targetKeyword = newKeyword || keyword;
         if (!text.trim()) {
             setError('Please enter some text');
             return;
         }
-        if (!keyword.trim()) {
+        if (!targetKeyword.trim()) {
             setError('Please enter a keyword');
             return;
         }
         setLoading(true);
         setError('');
         try {
-            const response = await apiService.createWordTree(text, keyword);
+            const response = await apiService.createWordTree(text, targetKeyword);
             setTreeData(response);
+            if (newKeyword) {
+                setKeyword(newKeyword);
+            }
         } catch (err) {
             setError('Failed to generate word tree. Please try again.');
             console.error('Word tree error:', err);
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleNodeClick = async (clickedWord: string) => {
+        if (clickedWord === keyword) {
+            return; // Don't regenerate if clicking the same keyword
+        }
+        // Format the clicked word to remove underscores for display and API call
+        const formattedWord = formatWordDisplay(clickedWord);
+        await handleGenerateTree(formattedWord);
+        // Set the formatted word in the input field
+        setKeyword(formattedWord);
     };
 
     const handleDownloadJSON = () => {
@@ -98,15 +114,6 @@ export function WordTree() {
             const svg = tidyTreeRef.current.querySelector('svg');
             if (svg) {
                 downloadSVGAsSVG(svg, 'word-tree-tidy');
-            }
-        }
-    };
-
-    const handleDownloadForceTreeSVG = () => {
-        if (forceTreeRef.current) {
-            const svg = forceTreeRef.current.querySelector('svg');
-            if (svg) {
-                downloadSVGAsSVG(svg, 'word-tree-force');
             }
         }
     };
@@ -172,7 +179,7 @@ export function WordTree() {
                     </div>
 
                     <button
-                        onClick={handleGenerateTree}
+                        onClick={() => handleGenerateTree()}
                         disabled={loading}
                         className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -215,46 +222,21 @@ export function WordTree() {
                                 <BarChart3 className="h-4 w-4 mr-2" />
                                 Download Tidy Tree SVG
                             </button>
-                            <button
-                                onClick={handleDownloadForceTreeSVG}
-                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                            >
-                                <BarChart3 className="h-4 w-4 mr-2" />
-                                Download Force Tree SVG
-                            </button>
                         </div>
+                    </div>
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                        <p className="text-sm text-blue-800">
+                            <strong>Tip:</strong> Click on any word in the tree to explore its context and generate a new tree with that word as the keyword.
+                        </p>
                     </div>
                     <div ref={tidyTreeRef} style={{ width: '100%', height: '800px' }}>
                         <h3 className="text-lg font-semibold mb-2">Tidy Tree Layout</h3>
-                        <TidyTree data={d3TreeData} width={1000} height={800} />
-                    </div>
-                    <div style={{ height: 40 }} />
-                    <div ref={forceTreeRef} style={{ width: '100%', height: '800px' }}>
-                        <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-lg font-semibold">Force-Directed Graph</h3>
-                            <button
-                                type="button"
-                                className="px-3 py-1 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                onClick={() => forceRef.current?.reset()}
-                            >
-                                Reset Layout
-                            </button>
-                        </div>
-                        <div className="flex items-center gap-6 mb-4">
-                            <span className="flex items-center gap-1">
-                                <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', background: '#2563eb', border: '2px solid #2563eb' }}></span>
-                                <span className="ml-1 text-gray-800">Keyword/Root</span>
-                            </span>
-                            <span className="flex items-center gap-1">
-                                <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', background: '#f59e42', border: '2px solid #f59e42' }}></span>
-                                <span className="ml-1 text-gray-800">Left Context</span>
-                            </span>
-                            <span className="flex items-center gap-1">
-                                <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', background: '#10b981', border: '2px solid #10b981' }}></span>
-                                <span className="ml-1 text-gray-800">Right Context</span>
-                            </span>
-                        </div>
-                        <ForceDirectedWordTree ref={forceRef} treeData={treeData} width={800} height={700} />
+                        <TidyTree
+                            data={d3TreeData}
+                            width={1000}
+                            height={800}
+                            onNodeClick={handleNodeClick}
+                        />
                     </div>
                 </div>
             )}
