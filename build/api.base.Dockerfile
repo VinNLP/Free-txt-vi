@@ -29,7 +29,7 @@ RUN pip install -r requirements
 
 RUN mkdir -p /models
 RUN python -c "import nltk; \
-    nltk.download('punkt_tab') \
+    nltk.download('punkt_tab'); \
     nltk.download('stopwords')"
 
 RUN python -c "import os; \

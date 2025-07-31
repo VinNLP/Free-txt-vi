@@ -58,6 +58,25 @@ export interface ConcordanceResponse {
     results: ConcordanceEntry[];
 }
 
+export interface WordSuggestionRequest {
+    text: string;
+    keyword: string;
+    window_size: number;
+    num_suggestions?: number;
+}
+
+export interface WordSuggestionEntry {
+    left_context: string;
+    keyword: string;
+    right_context: string;
+    suggestions: string[];
+    detected_language: string;
+}
+
+export interface WordSuggestionResponse {
+    results: WordSuggestionEntry[];
+}
+
 
 
 export const apiService = {
@@ -82,6 +101,12 @@ export const apiService = {
     // Concordance
     async concordance(request: ConcordanceRequest): Promise<ConcordanceResponse> {
         const response = await api.post('/concordance', request);
+        return response.data;
+    },
+
+    // Word Suggestions
+    async wordSuggestions(request: WordSuggestionRequest): Promise<WordSuggestionResponse> {
+        const response = await api.post('/word_suggestions', request);
         return response.data;
     },
 

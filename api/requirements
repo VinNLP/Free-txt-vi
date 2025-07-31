@@ -12,3 +12,4 @@ accelerate
 py_vncorenlp
 sentence-transformers
 stopwordsiso
+langdetect

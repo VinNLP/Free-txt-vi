@@ -11,11 +11,15 @@ from internal.common.schemas.free_txt import (
     MeaningAnalysisResponse,
     ConcordanceRequest,
     ConcordanceResponse,
+    WordSuggestionRequest,
+    WordSuggestionResponse,
+    WordSuggestionEntry,
 )
 from internal.services.summarisation import Summarizer
 from internal.services.word_tree import WordTree
 from internal.services.meaning_analysis import MeaningAnalyzer
 from internal.services.word_use_relationships import ConcordanceService
+from internal.services.word_suggestions import WordSuggestionService
 
 
 class FreeTxtController:
@@ -28,6 +32,7 @@ class FreeTxtController:
         self.wordtree = WordTree()
         self.meaning_analyzer = MeaningAnalyzer()
         self.concordance_service = ConcordanceService()
+        self.word_suggestion_service = WordSuggestionService()
 
     async def summarization(
         self, sum_request: SummarizationRequest
@@ -60,3 +65,35 @@ class FreeTxtController:
             concordance_request.window_size,
         )
         return ConcordanceResponse(results=results)
+
+    async def word_suggestions(
+        self, word_suggestion_request: WordSuggestionRequest
+    ) -> WordSuggestionResponse:
+        # First get the concordance results
+        concordance_results = await self.concordance_service.concordance(
+            word_suggestion_request.text,
+            word_suggestion_request.keyword,
+            word_suggestion_request.window_size,
+        )
+
+        # For each concordance entry, generate suggestions
+        suggestion_results = []
+        for entry in concordance_results:
+            suggestions = await self.word_suggestion_service.get_contextual_suggestions(
+                entry.keyword,
+                entry.left_context,
+                entry.right_context,
+                word_suggestion_request.num_suggestions
+            )
+
+            suggestion_results.append(
+                WordSuggestionEntry(
+                    left_context=entry.left_context,
+                    keyword=entry.keyword,
+                    right_context=entry.right_context,
+                    suggestions=suggestions["suggestions"],
+                    detected_language=suggestions["detected_language"]
+                )
+            )
+
+        return WordSuggestionResponse(results=suggestion_results)

@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { BookOpen, Loader2, Search, Download, FileSpreadsheet } from 'lucide-react';
+import { BookOpen, Loader2, Search, Download, FileSpreadsheet, Lightbulb } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useInputText } from '../components/useInputText';
 import FileUploadToInputText from '../components/FileUploadToInputText';
-import { downloadConcordanceResults, downloadConcordanceResultsCSV } from '../utils/downloadUtils';
+import { downloadConcordanceResults, downloadConcordanceResultsCSV, downloadWordSuggestionResults, downloadWordSuggestionResultsCSV } from '../utils/downloadUtils';
 
 interface ConcordanceEntry {
     left_context: string;
@@ -11,12 +11,19 @@ interface ConcordanceEntry {
     right_context: string;
 }
 
+interface ConcordanceEntryWithSuggestions extends ConcordanceEntry {
+    suggestions?: string[];
+    detected_language?: string;
+}
+
 export function Concordance() {
     const WORD_LIMIT = 1000;
     const { inputText: text, setInputText: setText } = useInputText();
     const [keyword, setKeyword] = useState('');
     const [windowSize, setWindowSize] = useState(5);
-    const [results, setResults] = useState<ConcordanceEntry[]>([]);
+    const [enableAISuggestions, setEnableAISuggestions] = useState(false);
+    const [numSuggestions, setNumSuggestions] = useState(5);
+    const [results, setResults] = useState<ConcordanceEntryWithSuggestions[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -53,12 +60,22 @@ export function Concordance() {
         setLoading(true);
         setError('');
         try {
-            const res = await apiService.concordance({
-                text,
-                keyword,
-                window_size: windowSize,
-            });
-            setResults(res.results);
+            if (enableAISuggestions) {
+                const res = await apiService.wordSuggestions({
+                    text,
+                    keyword,
+                    window_size: windowSize,
+                    num_suggestions: numSuggestions,
+                });
+                setResults(res.results);
+            } else {
+                const res = await apiService.concordance({
+                    text,
+                    keyword,
+                    window_size: windowSize,
+                });
+                setResults(res.results);
+            }
         } catch (err) {
             setError('Failed to fetch concordance results. Please try again.');
             console.error('Concordance error:', err);
@@ -68,18 +85,29 @@ export function Concordance() {
     };
 
     const handleDownloadJSON = () => {
-        downloadConcordanceResults(results, keyword, windowSize, text);
+        if (enableAISuggestions) {
+            downloadWordSuggestionResults(results, keyword, windowSize, text, numSuggestions);
+        } else {
+            downloadConcordanceResults(results, keyword, windowSize, text);
+        }
     };
 
     const handleDownloadCSV = () => {
-        downloadConcordanceResultsCSV(results);
+        if (enableAISuggestions) {
+            downloadWordSuggestionResultsCSV(results);
+        } else {
+            downloadConcordanceResultsCSV(results);
+        }
     };
 
     return (
         <div className="space-y-6">
             <div className="flex items-center space-x-3">
                 <BookOpen className="h-8 w-8 text-blue-600" />
-                <h1 className="text-3xl font-bold text-gray-900">Concordance</h1>
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Concordance</h1>
+                    <p className="text-sm text-gray-600">Find keyword occurrences with optional AI-powered word suggestions</p>
+                </div>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -134,6 +162,40 @@ export function Concordance() {
                             placeholder="Window size"
                         />
                     </div>
+
+                    <div className="flex items-center space-x-3">
+                        <div className="flex items-center">
+                            <input
+                                id="enableAI"
+                                type="checkbox"
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                checked={enableAISuggestions}
+                                onChange={e => setEnableAISuggestions(e.target.checked)}
+                            />
+                            <label htmlFor="enableAI" className="ml-2 flex items-center text-sm font-medium text-gray-700">
+                                <Lightbulb className="h-4 w-4 mr-1" />
+                                Enable AI Suggestions
+                            </label>
+                        </div>
+                    </div>
+
+                    {enableAISuggestions && (
+                        <div>
+                            <label htmlFor="numSuggestions" className="block text-sm font-medium text-gray-700 mb-2">
+                                Number of AI Suggestions
+                            </label>
+                            <input
+                                id="numSuggestions"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                type="number"
+                                min={1}
+                                max={10}
+                                value={numSuggestions}
+                                onChange={e => setNumSuggestions(Number(e.target.value))}
+                                placeholder="Number of suggestions"
+                            />
+                        </div>
+                    )}
                     <button
                         onClick={handleAnalyze}
                         disabled={loading}
@@ -145,7 +207,7 @@ export function Concordance() {
                                 Analyzing...
                             </>
                         ) : (
-                            'Analyze'
+                            enableAISuggestions ? 'Analyze with AI' : 'Analyze'
                         )}
                     </button>
                     {error && (
@@ -159,12 +221,22 @@ export function Concordance() {
             {results.length > 0 && (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <h2 className="text-xl font-semibold mb-2">Results</h2>
+                    {enableAISuggestions && results.length > 0 && results[0].detected_language && (
+                        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                            <p className="text-sm text-blue-800">
+                                <strong>Detected Language:</strong> {results[0].detected_language.toUpperCase()}
+                            </p>
+                        </div>
+                    )}
                     <table className="w-full border text-sm">
                         <thead>
                             <tr className="bg-gray-100">
                                 <th className="border px-2 py-1">Left Context</th>
                                 <th className="border px-2 py-1">Keyword</th>
                                 <th className="border px-2 py-1">Right Context</th>
+                                {enableAISuggestions && (
+                                    <th className="border px-2 py-1">AI Suggestions</th>
+                                )}
                             </tr>
                         </thead>
                         <tbody>
@@ -173,6 +245,24 @@ export function Concordance() {
                                     <td className="border px-2 py-1">{entry.left_context}</td>
                                     <td className="border px-2 py-1 font-bold text-blue-700">{entry.keyword}</td>
                                     <td className="border px-2 py-1">{entry.right_context}</td>
+                                    {enableAISuggestions && (
+                                        <td className="border px-2 py-1">
+                                            {entry.suggestions && entry.suggestions.length > 0 ? (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {entry.suggestions.map((suggestion, suggestionIdx) => (
+                                                        <span
+                                                            key={suggestionIdx}
+                                                            className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded"
+                                                        >
+                                                            {suggestion}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span className="text-gray-400 text-xs">No suggestions</span>
+                                            )}
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>
