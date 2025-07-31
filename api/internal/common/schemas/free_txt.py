@@ -32,9 +32,26 @@ class SentimentChartResponse(BaseModel):
     words: List[SentimentChartWord] = Field(description="List word to represent")
 
 
+class AspectDetectionRequest(BaseModel):
+    text: str = Field(description="Input text to analyze for aspects")
+
+
+class AspectInfo(BaseModel):
+    aspect: str = Field(description="Detected aspect name")
+    confidence: float = Field(description="Confidence score for the aspect (0-1)")
+    similarity_score: float = Field(description="Cosine similarity score")
+    description: str = Field(description="Description of the aspect")
+    language: str = Field(description="Language of the best matching description (en/vi)")
+
+
+class AspectDetectionResponse(BaseModel):
+    aspects: List[AspectInfo] = Field(description="List of detected aspects")
+
+
 class SummarizationRequest(BaseModel):
     text: str = Field(description="Input text")
-    ratio: float = Field(description="Ratio of summary")
+    ratio: float = Field(description="Ratio of summary", ge=0.1, le=0.5)
+    aspect: Optional[str] = Field(default=None, description="Specific aspect to focus on in summary")
 
 
 class SummarizationResponse(BaseModel):

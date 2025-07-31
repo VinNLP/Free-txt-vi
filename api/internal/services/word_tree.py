@@ -6,7 +6,7 @@ import re
 from internal.services.vncorenlp_singleton import vncorenlp_model
 
 
-def clean_word(word: str) -> str:
+async def clean_word(word: str) -> str:
     """
     Clean a word by removing apostrophes, quotes, underscores, and other unwanted characters.
     """
@@ -34,13 +34,13 @@ class WordTreeNode:
         self.children = defaultdict(WordTreeNode)
         self.count = 0
 
-    def insert(self, words: List[str]):
+    async def insert(self, words: List[str]):
         node = self
         for word in words:
             node = node.children[word]
             node.count += 1
 
-    def to_dict(self):
+    async def to_dict(self):
         def build(node):
             out = {}
             for word, child in node.children.items():
@@ -60,7 +60,7 @@ class WordTree:
         seg_keyword = "".join(self.model.word_segment(keyword.lower()))
 
         # Clean the keyword
-        seg_keyword = clean_word(seg_keyword)
+        seg_keyword = await clean_word(seg_keyword)
 
         mod_text = " ".join(seg_text)
         tokens = mod_text.split()
@@ -70,26 +70,26 @@ class WordTree:
 
         for i, token in enumerate(tokens):
             # Clean the token for comparison
-            cleaned_token = clean_word(token)
+            cleaned_token = await clean_word(token)
             if cleaned_token == seg_keyword:
                 left_context = tokens[max(0, i - window) : i][::-1]
                 right_context = tokens[i + 1 : i + 1 + window]
 
                 # Remove punctuation and clean words from context
-                left_context = [clean_word(w) for w in left_context if w not in punctuation]
-                right_context = [clean_word(w) for w in right_context if w not in punctuation]
+                left_context = [await clean_word(w) for w in left_context if w not in punctuation]
+                right_context = [await clean_word(w) for w in right_context if w not in punctuation]
 
                 # Filter out empty words after cleaning
                 left_context = [w for w in left_context if w]
                 right_context = [w for w in right_context if w]
 
                 if left_context:
-                    left_tree.insert(left_context)
+                    await left_tree.insert(left_context)
                 if right_context:
-                    right_tree.insert(right_context)
+                    await right_tree.insert(right_context)
 
         return {
             "word": seg_keyword,
-            "left": left_tree.to_dict(),
-            "right": right_tree.to_dict(),
+            "left": await left_tree.to_dict(),
+            "right": await right_tree.to_dict(),
         }

@@ -13,3 +13,5 @@ py_vncorenlp
 sentence-transformers
 stopwordsiso
 langdetect
+scikit-learn
+numpy
