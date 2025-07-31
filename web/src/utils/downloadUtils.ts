@@ -1433,3 +1433,36 @@ export const downloadWordTree = (treeData: unknown, originalText: string) => {
   };
   downloadAsJSON(data, 'word-tree');
 };
+
+export const downloadWordSuggestionResults = (
+  results: unknown[],
+  keyword: string,
+  windowSize: number,
+  originalText: string,
+  numSuggestions: number
+) => {
+  const data = {
+    originalText,
+    keyword,
+    windowSize,
+    numSuggestions,
+    analysisDate: new Date().toISOString(),
+    results: results.map(entry => ({
+      left_context: (entry as { left_context: string }).left_context,
+      keyword: (entry as { keyword: string }).keyword,
+      right_context: (entry as { right_context: string }).right_context,
+      suggestions: (entry as { suggestions: string[] }).suggestions
+    }))
+  };
+  downloadAsJSON(data, 'word-suggestion-results');
+};
+
+export const downloadWordSuggestionResultsCSV = (results: unknown[]) => {
+  const csvData = results.map(entry => ({
+    left_context: (entry as { left_context: string }).left_context,
+    keyword: (entry as { keyword: string }).keyword,
+    right_context: (entry as { right_context: string }).right_context,
+    suggestions: (entry as { suggestions: string[] }).suggestions.join('; ')
+  }));
+  downloadAsCSV(csvData, 'word-suggestion-results');
+};

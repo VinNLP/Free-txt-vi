@@ -8,7 +8,7 @@ from internal.services.vncorenlp_singleton import vncorenlp_model
 
 def clean_word(word: str) -> str:
     """
-    Clean a word by removing apostrophes, quotes, and other unwanted characters.
+    Clean a word by removing apostrophes, quotes, underscores, and other unwanted characters.
     """
     # Remove various types of quotes and apostrophes
     word = re.sub(r'[\'′`´]', '', word)  # Remove apostrophes and similar characters
@@ -18,7 +18,14 @@ def clean_word(word: str) -> str:
     word = re.sub(r'[«»]', '', word)     # Remove guillemets
     word = re.sub(r'[„"]', '', word)     # Remove double quotes
     word = re.sub(r'[\u2018\u2019]', '', word)  # Remove single quotes (left and right)
-    return word.strip()
+
+    # Remove underscores and replace with spaces
+    word = word.replace('_', ' ')
+
+    # Remove extra spaces and normalize
+    word = re.sub(r'\s+', ' ', word).strip()
+
+    return word
 
 
 class WordTreeNode:

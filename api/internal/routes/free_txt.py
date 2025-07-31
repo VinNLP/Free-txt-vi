@@ -8,6 +8,7 @@ from internal.common.schemas.free_txt import (
     WordTreeResponse,
     WordUseRelationshipsResponse,
     ConcordanceResponse,
+    WordSuggestionResponse,
 )
 from internal.handler.free_txt import FreeTxtHandler
 
@@ -81,4 +82,13 @@ class FreeTxtRoute:
             response_model=ConcordanceResponse,
             summary="Text Concordance",
             description="Return keyword with N words before and after for each occurrence.",
+        )
+
+        self.router.add_api_route(
+            path="/word_suggestions",
+            endpoint=self.handler.word_suggestions,
+            methods=["POST"],
+            response_model=WordSuggestionResponse,
+            summary="Word Suggestions",
+            description="Return keyword concordance with AI-generated similar word suggestions.",
         )

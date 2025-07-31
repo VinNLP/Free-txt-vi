@@ -93,3 +93,22 @@ class ConcordanceEntry(BaseModel):
 
 class ConcordanceResponse(BaseModel):
     results: List[ConcordanceEntry] = Field(description="List of concordance results")
+
+
+class WordSuggestionRequest(BaseModel):
+    text: str = Field(description="Input text to analyze")
+    keyword: str = Field(description="Keyword to search for")
+    window_size: int = Field(description="Number of words before and after the keyword")
+    num_suggestions: int = Field(default=5, description="Number of word suggestions to generate")
+
+
+class WordSuggestionEntry(BaseModel):
+    left_context: str = Field(description="Words before the keyword")
+    keyword: str = Field(description="The keyword itself")
+    right_context: str = Field(description="Words after the keyword")
+    suggestions: List[str] = Field(description="Suggested similar words")
+    detected_language: str = Field(description="Detected language of the context")
+
+
+class WordSuggestionResponse(BaseModel):
+    results: List[WordSuggestionEntry] = Field(description="List of concordance results with word suggestions")
