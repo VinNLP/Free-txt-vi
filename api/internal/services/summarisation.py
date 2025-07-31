@@ -1,62 +1,90 @@
 from nltk import sent_tokenize
 from summa.summarizer import summarize as summa_summarizer
 from transformers import pipeline
-from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 import nltk
 import os
+import asyncio
+from .aspect_detection import AspectDetector
+from .llm_singleton import llm_singleton
 
 
 class Summarizer:
     def __init__(self):
+        # Use the LLM singleton instead of loading our own model
+        self.aspect_detector = AspectDetector()
 
-        model_path = os.getenv("MODEL_SUM_PATH", "Qwen/Qwen2.5-0.5B-Instruct")
-        self.sum_qwen_tokenizer = AutoTokenizer.from_pretrained(model_path)
-        self.sum_qwen_model = AutoModelForCausalLM.from_pretrained(
-            model_path, torch_dtype="auto", device_map="cuda:4" if torch.cuda.is_available() else "cpu"
-        )
+    async def sum_qwen(self, input_text, chosen_ratio, aspect=None):
+        # Enforce ratio constraints: between 10% and 50%
+        chosen_ratio = max(0.1, min(0.5, chosen_ratio))
 
-    async def sum_qwen(self, input_text, chosen_ratio):
         # Calculate target word count based on chosen_ratio
         input_words = len(input_text.split())
         target_words = max(int(input_words * chosen_ratio), 10)
 
-        messages = [
-            {
-                "role": "system",
-                "content": f"""Return the summary content in its language in approximately {target_words} words. Please return it in user input language. Don't return any other text. User input: {input_text}""",
-            },
-        ]
-        text = self.sum_qwen_tokenizer.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True
-        )
-        model_inputs = self.sum_qwen_tokenizer([text], return_tensors="pt").to(
-            self.sum_qwen_model.device
+        if aspect:
+            # Use aspect-specific prompt
+            prompt = await self.aspect_detector.get_aspect_summary_prompt(input_text, aspect, target_words)
+            messages = [
+                {
+                    "role": "system",
+                    "content": prompt,
+                },
+            ]
+        else:
+            # Use general summarization prompt
+            prompt = f"""You are a text summarization assistant. Your task is to summarize the given text.
+
+IMPORTANT LANGUAGE RULES:
+- You MUST return the summary in the EXACT SAME LANGUAGE as the input text
+- If the input is in Vietnamese, respond ONLY in Vietnamese
+- If the input is in English, respond ONLY in English
+- If the input is in any other language, respond in that same language
+- NEVER translate or change the language of your response
+
+TASK:
+- Summarize the following text in approximately {target_words} words
+- Maintain the original language of the input text
+- Focus on the most important information
+- Keep the summary coherent and well-structured
+
+Input text: {input_text}
+
+Remember: Respond in the SAME LANGUAGE as the input text. Do not translate."""
+
+            messages = [
+                {
+                    "role": "system",
+                    "content": prompt,
+                },
+            ]
+
+        # Use the LLM singleton to generate text
+        response = await llm_singleton.generate_text(
+            messages=messages,
+            max_new_tokens=min(target_words, 500),
+            temperature=0.7,
+            top_p=0.9
         )
 
-        max_new_tokens = min(target_words * 2, 10000)
-
-        generated_ids = self.sum_qwen_model.generate(
-            **model_inputs, max_new_tokens=max_new_tokens
-        )
-        generated_ids = [
-            output_ids[len(input_ids) :]
-            for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
-        ]
-
-        response = self.sum_qwen_tokenizer.batch_decode(
-            generated_ids, skip_special_tokens=True
-        )[0]
         return response
 
-    async def summarizer_summa(self, input_text, chosen_ratio):
+    async def detect_aspects(self, input_text):
+        """
+        Detect aspects in the input text
+        """
+        return await self.aspect_detector.detect_aspects(input_text)
 
+    async def summarizer_summa(self, input_text, chosen_ratio):
+        """
+        Fast extractive summarization using TextRank
+        """
         # Convert input_text to a string if it isn't already
         if not isinstance(input_text, str):
             input_text = " ".join(map(str, input_text))
 
-        # Ensure the chosen_ratio is at least 0.1
-        chosen_ratio = max(chosen_ratio, 0.1)
+        # Enforce ratio constraints: between 10% and 50%
+        chosen_ratio = max(0.1, min(0.5, chosen_ratio))
 
         # Get the summary using the text_rank_summarize function
         summary = summa_summarizer(input_text, chosen_ratio)
@@ -71,3 +99,10 @@ class Summarizer:
             return sentences[0]
         else:
             return "Unable to summarize the input text."
+
+    async def fast_summarize(self, input_text, chosen_ratio, aspect=None):
+        """
+        Fast summarization using extractive method for better performance
+        """
+        # Use extractive summarization for speed
+        return await self.summarizer_summa(input_text, chosen_ratio)

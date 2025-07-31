@@ -4,6 +4,7 @@ from internal.common.schemas.free_txt import (
     MeaningAnalysisResponse,
     SentimentChartResponse,
     SummarizationResponse,
+    AspectDetectionResponse,
     WordCloudResponse,
     WordTreeResponse,
     WordUseRelationshipsResponse,
@@ -28,6 +29,15 @@ class FreeTxtRoute:
             response_model=MeaningAnalysisResponse,
             summary="Meaning Analysis",
             description="Analysis the meaning of sentences",
+        )
+
+        self.router.add_api_route(
+            path="/aspect_detection",
+            endpoint=self.handler.aspect_detection,
+            methods=["POST"],
+            response_model=AspectDetectionResponse,
+            summary="Aspect Detection",
+            description="Detect aspects in the input text",
         )
 
         # self.router.add_api_route(

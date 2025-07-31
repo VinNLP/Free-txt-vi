@@ -5,6 +5,8 @@ from core.settings import settings
 from internal.common.schemas.free_txt import (
     SummarizationRequest,
     SummarizationResponse,
+    AspectDetectionRequest,
+    AspectDetectionResponse,
     WordTreeRequest,
     WordTreeResponse,
     MeaningAnalysisRequest,
@@ -34,10 +36,16 @@ class FreeTxtController:
         self.concordance_service = ConcordanceService()
         self.word_suggestion_service = WordSuggestionService()
 
+    async def aspect_detection(
+        self, aspect_request: AspectDetectionRequest
+    ) -> AspectDetectionResponse:
+        aspects = await self.summarizer.detect_aspects(aspect_request.text)
+        return AspectDetectionResponse(aspects=aspects)
+
     async def summarization(
         self, sum_request: SummarizationRequest
     ) -> SummarizationResponse:
-        text = await self.summarizer.sum_qwen(sum_request.text, sum_request.ratio)
+        text = await self.summarizer.sum_qwen(sum_request.text, sum_request.ratio, sum_request.aspect)
         return SummarizationResponse(summarize_text=text)
 
     async def gen_wordtree(self, wordtree_request: WordTreeRequest) -> WordTreeResponse:

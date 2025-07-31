@@ -18,9 +18,22 @@ export interface MeaningAnalysisResponse {
     sentences: Sentence[];
 }
 
+export interface AspectInfo {
+    aspect: string;
+    confidence: number;
+    similarity_score: number;
+    description: string;
+    language: string;
+}
+
+export interface AspectDetectionResponse {
+    aspects: AspectInfo[];
+}
+
 export interface SummarizationRequest {
     text: string;
-    ratio: number;
+    ratio: number; // Must be between 0.1 (10%) and 0.5 (50%)
+    aspect?: string;
 }
 
 export interface SummarizationResponse {
@@ -86,9 +99,19 @@ export const apiService = {
         return response.data;
     },
 
+    // Aspect Detection
+    async detectAspects(text: string): Promise<AspectDetectionResponse> {
+        const response = await api.post('/aspect_detection', { text });
+        return response.data;
+    },
+
     // Summarization
-    async summarizeText(text: string, ratio: number = 0.3): Promise<SummarizationResponse> {
-        const response = await api.post('/summarization', { text, ratio });
+    async summarizeText(text: string, ratio: number = 0.3, aspect?: string): Promise<SummarizationResponse> {
+        const request: SummarizationRequest = { text, ratio };
+        if (aspect) {
+            request.aspect = aspect;
+        }
+        const response = await api.post('/summarization', request);
         return response.data;
     },
 

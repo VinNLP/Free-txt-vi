@@ -5,6 +5,7 @@ from loguru import logger
 
 from internal.common.schemas.free_txt import (
     SummarizationRequest,
+    AspectDetectionRequest,
     WordTreeRequest,
     MeaningAnalysisRequest,
     ConcordanceRequest,
@@ -19,6 +20,10 @@ class FreeTxtHandler:
 
     def __init__(self, controller: FreeTxtController):
         self.controller = controller
+
+    @exception_handler
+    async def aspect_detection(self, aspect_request: AspectDetectionRequest):
+        return await self.controller.aspect_detection(aspect_request)
 
     @exception_handler
     async def summarization(self, sum_request: SummarizationRequest):

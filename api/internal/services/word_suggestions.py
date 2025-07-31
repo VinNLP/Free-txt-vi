@@ -4,17 +4,15 @@ import os
 from typing import List, Dict
 import re
 import langdetect
+from .llm_singleton import llm_singleton
 
 
 class WordSuggestionService:
     def __init__(self):
-        model_path = os.getenv("MODEL_SUM_PATH", "Qwen/Qwen2.5-0.5B-Instruct")
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_path, torch_dtype="auto", device_map="cuda:4" if torch.cuda.is_available() else "cpu"
-        )
+        # Use the LLM singleton instead of loading our own model
+        pass
 
-    def _detect_language(self, text: str) -> str:
+    async def _detect_language(self, text: str) -> str:
         """
         Detect the language of the input text
         """
@@ -27,7 +25,7 @@ class WordSuggestionService:
             # Default to Vietnamese if detection fails
             return 'vi'
 
-    def _get_language_prompt(self, language: str, keyword: str, context: str, num_suggestions: int) -> tuple:
+    async def _get_language_prompt(self, language: str, keyword: str, context: str, num_suggestions: int) -> tuple:
         """
         Get language-specific prompt and system message
         """
@@ -111,10 +109,10 @@ class WordSuggestionService:
         Generate similar word suggestions based on keyword and context using language model
         """
         # Detect the language of the context
-        detected_language = self._detect_language(context)
+        detected_language = await self._detect_language(context)
 
         # Get language-specific prompt and system message
-        system_message, prompt = self._get_language_prompt(detected_language, keyword, context, num_suggestions)
+        system_message, prompt = await self._get_language_prompt(detected_language, keyword, context, num_suggestions)
 
         messages = [
             {
@@ -127,38 +125,19 @@ class WordSuggestionService:
             }
         ]
 
-        text = self.tokenizer.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True
-        )
-
-        model_inputs = self.tokenizer([text], return_tensors="pt").to(
-            self.model.device
-        )
-
-        # Generate suggestions with reasonable token limit
-        max_new_tokens = min(num_suggestions * 10, 100)
-
-        generated_ids = self.model.generate(
-            **model_inputs,
-            max_new_tokens=max_new_tokens,
+        # Use the LLM singleton to generate text
+        response = await llm_singleton.generate_text(
+            messages=messages,
+            max_new_tokens=min(num_suggestions * 10, 100),
             temperature=0.7,
-            do_sample=True
+            top_p=0.9
         )
-
-        generated_ids = [
-            output_ids[len(input_ids):]
-            for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
-        ]
-
-        response = self.tokenizer.batch_decode(
-            generated_ids, skip_special_tokens=True
-        )[0]
 
         # Parse the response to extract words
-        suggestions = self._parse_suggestions(response, num_suggestions, detected_language)
+        suggestions = await self._parse_suggestions(response, num_suggestions, detected_language)
         return suggestions
 
-    def _parse_suggestions(self, response: str, num_suggestions: int, language: str = 'vi') -> List[str]:
+    async def _parse_suggestions(self, response: str, num_suggestions: int, language: str = 'vi') -> List[str]:
         """
         Parse the model response to extract word suggestions
         """
@@ -183,18 +162,18 @@ class WordSuggestionService:
         for word in words:
             if word and len(suggestions) < num_suggestions:
                 # Comprehensive cleaning of the word
-                cleaned_word = self._clean_suggestion_word(word)
+                cleaned_word = await self._clean_suggestion_word(word)
                 if cleaned_word and len(cleaned_word) > 1:
                     suggestions.append(cleaned_word)
 
         # If we don't have enough suggestions, add some fallback words
         if len(suggestions) < num_suggestions:
-            fallback_words = self._get_fallback_suggestions(num_suggestions - len(suggestions), language)
+            fallback_words = await self._get_fallback_suggestions(num_suggestions - len(suggestions), language)
             suggestions.extend(fallback_words)
 
         return suggestions[:num_suggestions]
 
-    def _clean_suggestion_word(self, word: str) -> str:
+    async def _clean_suggestion_word(self, word: str) -> str:
         """
         Clean a suggestion word by removing unwanted characters and formatting
         """
@@ -218,7 +197,7 @@ class WordSuggestionService:
 
         return word
 
-    def _get_fallback_suggestions(self, count: int, language: str = 'vi') -> List[str]:
+    async def _get_fallback_suggestions(self, count: int, language: str = 'vi') -> List[str]:
         """
         Provide fallback suggestions when the model doesn't generate enough
         """
@@ -246,7 +225,7 @@ class WordSuggestionService:
         full_context = f"{left_context} {keyword} {right_context}".strip()
 
         # Detect language for this context
-        detected_language = self._detect_language(full_context)
+        detected_language = await self._detect_language(full_context)
 
         suggestions = await self.suggest_similar_words(keyword, full_context, num_suggestions)
 

@@ -6,7 +6,7 @@ import re
 from internal.services.vncorenlp_singleton import vncorenlp_model
 
 
-def clean_word(word: str) -> str:
+async def clean_word(word: str) -> str:
     """
     Clean a word by removing apostrophes, quotes, underscores, and other unwanted characters.
     """
@@ -40,7 +40,7 @@ class ConcordanceService:
         seg_keyword = "".join(self.model.word_segment(keyword.lower()))
 
         # Clean the keyword
-        seg_keyword = clean_word(seg_keyword)
+        seg_keyword = await clean_word(seg_keyword)
 
         tokens = " ".join(seg_text).split()
         results = []
@@ -48,15 +48,15 @@ class ConcordanceService:
 
         for i, token in enumerate(tokens):
             # Clean the token for comparison
-            cleaned_token = clean_word(token)
+            cleaned_token = await clean_word(token)
             if cleaned_token == seg_keyword:
                 left_context = [
-                    clean_word(w)
+                    await clean_word(w)
                     for w in tokens[max(0, i - window_size) : i]
                     if w not in punctuation
                 ]
                 right_context = [
-                    clean_word(w)
+                    await clean_word(w)
                     for w in tokens[i + 1 : i + 1 + window_size]
                     if w not in punctuation
                 ]
