@@ -78,13 +78,17 @@ const TidyTree: React.FC<TidyTreeProps> = ({ data, width = 1000, height = 800, o
             const baseWidth = Math.max(displayWord.length * 8, 40);
             const baseHeight = 36;
 
-            // Scale factor based on count (logarithmic scaling to prevent extreme sizes)
-            const scaleFactor = Math.min(1 + Math.log(count + 1) * 0.3, 2.5);
+            // Enhanced scaling for frequency > 1
+            let scaleFactor = 1;
+            if (count > 1) {
+                // More aggressive scaling for words with frequency > 1
+                scaleFactor = Math.min(1 + (count - 1) * 0.4, 3.0); // Linear scaling with cap at 3x
+            }
 
             return {
                 width: baseWidth * scaleFactor,
                 height: baseHeight * scaleFactor,
-                fontSize: Math.min(16 * scaleFactor, 24) // Cap font size at 24
+                fontSize: Math.min(16 * scaleFactor, 28) // Cap font size at 28
             };
         }
 
@@ -146,6 +150,8 @@ const TidyTree: React.FC<TidyTreeProps> = ({ data, width = 1000, height = 800, o
             .attr('rx', 6)
             .attr('ry', 6)
             .attr('fill', getNodeColor)
+            .attr('stroke', '#374151')
+            .attr('stroke-width', 1)
             .style('cursor', 'pointer')
             .on('mouseover', function(event, d) {
                 const count = getNodeCount(d);
@@ -153,7 +159,12 @@ const TidyTree: React.FC<TidyTreeProps> = ({ data, width = 1000, height = 800, o
                 tooltip.transition()
                     .duration(200)
                     .style('opacity', 0.9);
-                tooltip.html(`<strong>${displayWord}</strong><br/>Frequency: ${count}<br/><em>Click to explore this word</em>`)
+
+                const frequencyText = count > 1 ?
+                    `<span style="color: #dc2626; font-weight: bold;">Frequency: ${count}</span>` :
+                    `Frequency: ${count}`;
+
+                tooltip.html(`<strong>${displayWord}</strong><br/>${frequencyText}<br/><em>Click to explore this word</em>`)
                     .style('left', (event.pageX + 10) + 'px')
                     .style('top', (event.pageY - 28) + 'px');
             })
