@@ -6,6 +6,7 @@ from internal.common.schemas.free_txt import (
     SummarizationResponse,
     AspectDetectionResponse,
     WordCloudResponse,
+    MatplotlibWordCloudResponse,
     WordTreeResponse,
     WordUseRelationshipsResponse,
     ConcordanceResponse,
@@ -58,14 +59,23 @@ class FreeTxtRoute:
             description="Sumarize the text input",
         )
 
-        # self.router.add_api_route(
-        #     path="/word_cloud",
-        #     endpoint=self.handler.word_cloud,
-        #     methods=["POST"],
-        #     response_model=WordCloudResponse,
-        #     summary="Word Cloud",
-        #     description="Create Word Cloud",
-        # )
+        self.router.add_api_route(
+            path="/word_cloud",
+            endpoint=self.handler.word_cloud,
+            methods=["POST"],
+            response_model=WordCloudResponse,
+            summary="Word Cloud",
+            description="Create Word Cloud based on word frequency",
+        )
+
+        self.router.add_api_route(
+            path="/matplotlib_word_cloud",
+            endpoint=self.handler.matplotlib_word_cloud,
+            methods=["POST"],
+            response_model=MatplotlibWordCloudResponse,
+            summary="Matplotlib Word Cloud",
+            description="Create traditional wordcloud image using matplotlib",
+        )
 
         self.router.add_api_route(
             path="/word_tree",

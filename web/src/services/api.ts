@@ -90,6 +90,38 @@ export interface WordSuggestionResponse {
     results: WordSuggestionEntry[];
 }
 
+export interface WordCloudWord {
+    word: string;
+    score: number;
+}
+
+export interface MatplotlibWordCloudRequest {
+    text: string;
+    min_word_length?: number;
+    max_words?: number;
+    width?: number;
+    height?: number;
+    background_color?: string;
+    colormap?: string;
+    shape?: string;
+    contour_width?: number;
+    contour_color?: string;
+    prefer_horizontal?: number;
+    relative_scaling?: number;
+    scale?: number;
+    min_font_size?: number;
+    max_font_size?: number;
+    random_state?: number;
+}
+
+export interface MatplotlibWordCloudResponse {
+    image: string;
+    words: WordCloudWord[];
+    total_words: number;
+    most_frequent_word: string;
+    most_frequent_count: number;
+    message?: string;
+}
 
 
 export const apiService = {
@@ -130,6 +162,12 @@ export const apiService = {
     // Word Suggestions
     async wordSuggestions(request: WordSuggestionRequest): Promise<WordSuggestionResponse> {
         const response = await api.post('/word_suggestions', request);
+        return response.data;
+    },
+
+    // Matplotlib Word Cloud
+    async createMatplotlibWordCloud(request: MatplotlibWordCloudRequest): Promise<MatplotlibWordCloudResponse> {
+        const response = await api.post('/matplotlib_word_cloud', request);
         return response.data;
     },
 

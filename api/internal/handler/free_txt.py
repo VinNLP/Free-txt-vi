@@ -10,6 +10,8 @@ from internal.common.schemas.free_txt import (
     MeaningAnalysisRequest,
     ConcordanceRequest,
     WordSuggestionRequest,
+    WordCloudRequest,
+    MatplotlibWordCloudRequest,
 )
 from internal.controller.free_txt import FreeTxtController
 from tools.uts_exception import exception_handler
@@ -44,3 +46,11 @@ class FreeTxtHandler:
     @exception_handler
     async def word_suggestions(self, word_suggestion_request: WordSuggestionRequest):
         return await self.controller.word_suggestions(word_suggestion_request)
+
+    @exception_handler
+    async def word_cloud(self, word_cloud_request: WordCloudRequest):
+        return await self.controller.word_cloud(word_cloud_request)
+
+    @exception_handler
+    async def matplotlib_word_cloud(self, matplotlib_wordcloud_request: MatplotlibWordCloudRequest):
+        return await self.controller.matplotlib_word_cloud(matplotlib_wordcloud_request)

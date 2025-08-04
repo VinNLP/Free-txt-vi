@@ -15,3 +15,6 @@ stopwordsiso
 langdetect
 scikit-learn
 numpy
+matplotlib
+wordcloud
+Pillow
