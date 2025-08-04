@@ -58,6 +58,12 @@ class SummarizationResponse(BaseModel):
     summarize_text: str = Field(description="Summarized Text")
 
 
+class WordCloudRequest(BaseModel):
+    text: str = Field(description="Input text to analyze")
+    min_word_length: int = Field(default=2, description="Minimum word length to include")
+    max_words: int = Field(default=100, description="Maximum number of words to return")
+
+
 class WordCloudWord(BaseModel):
     word: str = Field(description="Word")
     score: int = Field(description="Score to view")
@@ -65,6 +71,34 @@ class WordCloudWord(BaseModel):
 
 class WordCloudResponse(BaseModel):
     words: List[WordCloudWord] = Field(description="Many words and their score")
+
+
+class MatplotlibWordCloudRequest(BaseModel):
+    text: str = Field(description="Input text to analyze")
+    min_word_length: int = Field(default=2, description="Minimum word length to include")
+    max_words: int = Field(default=100, description="Maximum number of words to return")
+    width: int = Field(default=2400, description="Width of the generated image")
+    height: int = Field(default=1800, description="Height of the generated image")
+    background_color: str = Field(default="white", description="Background color of the wordcloud")
+    colormap: str = Field(default="viridis", description="Matplotlib colormap for word colors")
+    shape: str = Field(default="circle", description="Shape of the wordcloud")
+    contour_width: int = Field(default=0, description="Width of contour lines (0 for no contour)")
+    contour_color: str = Field(default="black", description="Color of contour lines")
+    prefer_horizontal: float = Field(default=0.7, description="Fraction of words to display horizontally")
+    relative_scaling: float = Field(default=0.5, description="Relative scaling of word sizes")
+    scale: float = Field(default=1.0, description="Scale factor for the image")
+    min_font_size: int = Field(default=4, description="Minimum font size")
+    max_font_size: Optional[int] = Field(default=None, description="Maximum font size (None for auto)")
+    random_state: Optional[int] = Field(default=None, description="Random seed for reproducibility")
+
+
+class MatplotlibWordCloudResponse(BaseModel):
+    image: str = Field(description="Base64 encoded PNG image")
+    words: List[WordCloudWord] = Field(description="List of words and their frequencies")
+    total_words: int = Field(description="Total number of words in the wordcloud")
+    most_frequent_word: str = Field(description="Most frequent word")
+    most_frequent_count: int = Field(description="Frequency of the most frequent word")
+    message: Optional[str] = Field(default=None, description="Additional message or error")
 
 
 class WordTreeRequest(BaseModel):

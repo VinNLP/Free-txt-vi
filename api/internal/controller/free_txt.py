@@ -16,12 +16,18 @@ from internal.common.schemas.free_txt import (
     WordSuggestionRequest,
     WordSuggestionResponse,
     WordSuggestionEntry,
+    WordCloudRequest,
+    WordCloudResponse,
+    MatplotlibWordCloudRequest,
+    MatplotlibWordCloudResponse,
 )
 from internal.services.summarisation import Summarizer
 from internal.services.word_tree import WordTree
 from internal.services.meaning_analysis import MeaningAnalyzer
 from internal.services.word_use_relationships import ConcordanceService
 from internal.services.word_suggestions import WordSuggestionService
+from internal.services.word_cloud import WordCloudService
+from internal.services.matplotlib_wordcloud import MatplotlibWordCloudService
 
 
 class FreeTxtController:
@@ -35,6 +41,8 @@ class FreeTxtController:
         self.meaning_analyzer = MeaningAnalyzer()
         self.concordance_service = ConcordanceService()
         self.word_suggestion_service = WordSuggestionService()
+        self.word_cloud_service = WordCloudService()
+        self.matplotlib_wordcloud_service = MatplotlibWordCloudService()
 
     async def aspect_detection(
         self, aspect_request: AspectDetectionRequest
@@ -105,3 +113,28 @@ class FreeTxtController:
             )
 
         return WordSuggestionResponse(results=suggestion_results)
+
+    async def word_cloud(
+        self, word_cloud_request: WordCloudRequest
+    ) -> WordCloudResponse:
+        words = await self.word_cloud_service.generate_word_cloud(
+            word_cloud_request.text,
+            word_cloud_request.min_word_length,
+            word_cloud_request.max_words
+        )
+        return WordCloudResponse(words=words)
+
+    async def matplotlib_word_cloud(
+        self, matplotlib_wordcloud_request: MatplotlibWordCloudRequest
+    ) -> MatplotlibWordCloudResponse:
+        result = await self.matplotlib_wordcloud_service.generate_word_cloud_with_shape(
+            text=matplotlib_wordcloud_request.text,
+            shape=matplotlib_wordcloud_request.shape,
+            min_word_length=matplotlib_wordcloud_request.min_word_length,
+            max_words=matplotlib_wordcloud_request.max_words,
+            width=matplotlib_wordcloud_request.width,
+            height=matplotlib_wordcloud_request.height,
+            background_color=matplotlib_wordcloud_request.background_color,
+            colormap=matplotlib_wordcloud_request.colormap
+        )
+        return MatplotlibWordCloudResponse(**result)
