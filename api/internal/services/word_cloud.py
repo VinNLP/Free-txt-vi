@@ -5,7 +5,7 @@ import string
 import re
 from stopwordsiso import stopwords
 from langdetect import detect
-from internal.services.vncorenlp_singleton import vncorenlp_model
+from internal.services.vncorenlp_singleton import vncorenlp_model, process_text_with_vncorenlp, process_text_with_vncorenlp_safe
 
 
 async def clean_word(word: str) -> str:
@@ -58,8 +58,8 @@ class WordCloudService:
             # Default to English if language detection fails
             stop_words = set(stopwords('en'))
 
-        # Segment text using VnCoreNLP
-        seg_text = self.model.word_segment(text.lower())
+        # Segment text using VnCoreNLP (handles large texts by splitting into chunks)
+        seg_text = await process_text_with_vncorenlp_safe(text.lower())
 
         # Join segmented text and split into tokens
         tokens = " ".join(seg_text).split()

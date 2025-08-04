@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import List, Dict
 import string
 import re
-from internal.services.vncorenlp_singleton import vncorenlp_model
+from internal.services.vncorenlp_singleton import vncorenlp_model, process_text_with_vncorenlp, process_text_with_vncorenlp_safe
 
 
 async def clean_word(word: str) -> str:
@@ -56,7 +56,8 @@ class WordTree:
         self.model = vncorenlp_model
 
     async def build_word_tree(self, text: str, keyword: str, window: int = 5):
-        seg_text = self.model.word_segment(text.lower())
+        seg_text = await process_text_with_vncorenlp_safe(text.lower())
+        # For keywords, we can use direct word_segment since they're typically short
         seg_keyword = "".join(self.model.word_segment(keyword.lower()))
 
         # Clean the keyword

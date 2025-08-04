@@ -55,14 +55,29 @@ export function WordTree() {
         setText(e.target.value);
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+            // Only adjust height if word count is 500 or less
+            if (words.length <= 500) {
+                textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+            } else {
+                // Set a maximum height for texts with more than 500 words
+                textareaRef.current.style.height = '300px';
+                textareaRef.current.style.overflowY = 'auto';
+            }
         }
     };
 
     useEffect(() => {
         if (textareaRef.current) {
+            const words = text.split(/\s+/).filter(Boolean);
             textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+            // Only adjust height if word count is 500 or less
+            if (words.length <= 500) {
+                textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+            } else {
+                // Set a maximum height for texts with more than 500 words
+                textareaRef.current.style.height = '300px';
+                textareaRef.current.style.overflowY = 'auto';
+            }
         }
     }, [text]);
 
