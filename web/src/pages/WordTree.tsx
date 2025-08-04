@@ -224,10 +224,65 @@ export function WordTree() {
                             </button>
                         </div>
                     </div>
-                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                        <p className="text-sm text-blue-800">
-                            <strong>Tip:</strong> Click on any word in the tree to explore its context and generate a new tree with that word as the keyword.
-                        </p>
+                    <div className="mb-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg shadow-sm">
+                        <div className="flex items-center mb-3">
+                            <div className="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <h3 className="text-sm font-semibold text-indigo-800">Color Legend & Tips</h3>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                            <div className="flex items-center p-2 bg-white rounded-lg border border-indigo-100 shadow-sm">
+                                <div className="w-5 h-5 rounded-md bg-blue-500 border-2 border-blue-600 mr-3 shadow-sm"></div>
+                                <div>
+                                    <p className="text-xs font-medium text-gray-900">Root Keyword</p>
+                                    <p className="text-xs text-gray-500">Center of the tree</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center p-2 bg-white rounded-lg border border-indigo-100 shadow-sm">
+                                <div className="w-5 h-5 rounded-md bg-yellow-200 border-2 border-yellow-400 mr-3 shadow-sm"></div>
+                                <div>
+                                    <p className="text-xs font-medium text-gray-900">Left Context</p>
+                                    <p className="text-xs text-gray-500">Words before keyword</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center p-2 bg-white rounded-lg border border-indigo-100 shadow-sm">
+                                <div className="w-5 h-5 rounded-md bg-green-200 border-2 border-green-400 mr-3 shadow-sm"></div>
+                                <div>
+                                    <p className="text-xs font-medium text-gray-900">Right Context</p>
+                                    <p className="text-xs text-gray-500">Words after keyword</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <div className="flex items-center p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="w-4 h-4 bg-blue-100 rounded-full flex items-center justify-center mr-2">
+                                    <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.122 2.122" />
+                                    </svg>
+                                </div>
+                                <p className="text-xs text-blue-800">
+                                    <strong>Interactive:</strong> Click on any word in the tree to explore its context and generate a new tree with that word as the keyword
+                                </p>
+                            </div>
+
+                            <div className="flex items-center p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                                <div className="w-4 h-4 bg-amber-100 rounded-full flex items-center justify-center mr-2">
+                                    <svg className="w-3 h-3 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                    </svg>
+                                </div>
+                                <p className="text-xs text-amber-800">
+                                    <strong>Size:</strong> Larger boxes indicate higher word frequency in the context
+                                </p>
+                            </div>
+                        </div>
                     </div>
                     <div ref={tidyTreeRef} style={{ width: '100%', height: '800px' }}>
                         <h3 className="text-lg font-semibold mb-2">Tidy Tree Layout</h3>
