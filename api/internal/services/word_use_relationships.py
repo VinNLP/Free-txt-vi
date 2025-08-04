@@ -3,7 +3,7 @@ from typing import List
 from internal.common.schemas.free_txt import ConcordanceEntry
 import string
 import re
-from internal.services.vncorenlp_singleton import vncorenlp_model
+from internal.services.vncorenlp_singleton import vncorenlp_model, process_text_with_vncorenlp, process_text_with_vncorenlp_safe
 
 
 async def clean_word(word: str) -> str:
@@ -35,8 +35,9 @@ class ConcordanceService:
     async def concordance(
         self, text: str, keyword: str, window_size: int
     ) -> List[ConcordanceEntry]:
-        # Segment text and keyword using VnCoreNLP
-        seg_text = self.model.word_segment(text.lower())
+        # Segment text and keyword using VnCoreNLP (handles large texts by splitting into chunks)
+        seg_text = await process_text_with_vncorenlp_safe(text.lower())
+        # For keywords, we can use direct word_segment since they're typically short
         seg_keyword = "".join(self.model.word_segment(keyword.lower()))
 
         # Clean the keyword
