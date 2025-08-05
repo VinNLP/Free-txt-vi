@@ -208,8 +208,19 @@ class FreeTxtHandler:
     async def word_cloud(self, data: bytes):
         """Bytes-based word cloud endpoint"""
         try:
-            # Decode request data: text, min_word_length, max_words
+            # Decode request data: text, method, min_word_length, max_words
             text, remaining = BytesRequest.decode_text(data)
+
+            if len(remaining) < 12:  # 4 bytes for method length + 4 bytes for min_word_length + 4 bytes for max_words
+                raise ValueError("Insufficient data for method, min_word_length and max_words")
+
+            # Extract method parameter
+            method_length = struct.unpack('>I', remaining[:4])[0]
+            remaining = remaining[4:]
+            if len(remaining) < method_length:
+                raise ValueError("Insufficient data for method text")
+            method = remaining[:method_length].decode('utf-8')
+            remaining = remaining[method_length:]
 
             if len(remaining) < 8:  # 4 bytes for min_word_length + 4 bytes for max_words
                 raise ValueError("Insufficient data for min_word_length and max_words")
@@ -220,6 +231,7 @@ class FreeTxtHandler:
             # Create request object
             word_cloud_request = WordCloudRequest(
                 text=text,
+                method=method,
                 min_word_length=min_word_length,
                 max_words=max_words
             )
@@ -240,11 +252,19 @@ class FreeTxtHandler:
     async def matplotlib_word_cloud(self, data: bytes):
         """Bytes-based matplotlib word cloud endpoint"""
         try:
-            # Decode request data: text, min_word_length, max_words, width, height, shape, background_color, colormap, contour_width, contour_color, prefer_horizontal, relative_scaling, scale, min_font_size, max_font_size, random_state
+            # Decode request data: text, method, min_word_length, max_words, width, height, shape, background_color, colormap, contour_width, contour_color, prefer_horizontal, relative_scaling, scale, min_font_size, max_font_size, random_state
             text, remaining = BytesRequest.decode_text(data)
 
-            if len(remaining) < 16:  # Minimum required fields
+            if len(remaining) < 20:  # Minimum required fields including method
                 raise ValueError("Insufficient data for matplotlib word cloud parameters")
+
+            # Extract method parameter
+            method_length = struct.unpack('>I', remaining[:4])[0]
+            remaining = remaining[4:]
+            if len(remaining) < method_length:
+                raise ValueError("Insufficient data for method text")
+            method = remaining[:method_length].decode('utf-8')
+            remaining = remaining[method_length:]
 
             # Extract basic parameters
             min_word_length = struct.unpack('>I', remaining[:4])[0]
@@ -316,6 +336,7 @@ class FreeTxtHandler:
             # Create request object with all parameters
             matplotlib_wordcloud_request = MatplotlibWordCloudRequest(
                 text=text,
+                method=method,
                 min_word_length=min_word_length,
                 max_words=max_words,
                 width=width,

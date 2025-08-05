@@ -110,13 +110,14 @@ class SummarizationResponse(BaseModel):
 
 class WordCloudRequest(BaseModel):
     text: str = Field(description="Input text to analyze")
+    method: str = Field(default="frequency", description="Analysis method: 'frequency', 'loglikelihood', or 'keyness'")
     min_word_length: int = Field(default=2, description="Minimum word length to include")
     max_words: int = Field(default=100, description="Maximum number of words to return")
 
 
 class WordCloudWord(BaseModel):
     word: str = Field(description="Word")
-    score: int = Field(description="Score to view")
+    score: float = Field(description="Score to view")
 
 
 class WordCloudResponse(BaseModel):
@@ -125,6 +126,7 @@ class WordCloudResponse(BaseModel):
 
 class MatplotlibWordCloudRequest(BaseModel):
     text: str = Field(description="Input text to analyze")
+    method: str = Field(default="frequency", description="Analysis method: 'frequency', 'loglikelihood', or 'keyness'")
     min_word_length: int = Field(default=2, description="Minimum word length to include")
     max_words: int = Field(default=100, description="Maximum number of words to return")
     width: int = Field(default=2400, description="Width of the generated image")
@@ -147,7 +149,8 @@ class MatplotlibWordCloudResponse(BaseModel):
     words: List[WordCloudWord] = Field(description="List of words and their frequencies")
     total_words: int = Field(description="Total number of words in the wordcloud")
     most_frequent_word: str = Field(description="Most frequent word")
-    most_frequent_count: int = Field(description="Frequency of the most frequent word")
+    most_frequent_count: float = Field(description="Frequency/score of the most frequent word")
+    method: str = Field(description="Analysis method used")
     message: Optional[str] = Field(default=None, description="Additional message or error")
 
 
