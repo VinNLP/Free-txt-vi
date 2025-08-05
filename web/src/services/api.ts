@@ -149,6 +149,7 @@ export interface WordCloudWord {
 
 export interface MatplotlibWordCloudRequest {
     text: string;
+    method?: string;
     min_word_length?: number;
     max_words?: number;
     width?: number;
@@ -172,6 +173,7 @@ export interface MatplotlibWordCloudResponse {
     total_words: number;
     most_frequent_word: string;
     most_frequent_count: number;
+    method: string;
     message?: string;
 }
 
@@ -263,15 +265,17 @@ export const apiService = {
     },
 
     // Word Cloud
-    async createWordCloud(text: string, minWordLength: number = 2, maxWords: number = 100): Promise<{ words: WordCloudWord[] }> {
+    async createWordCloud(text: string, method: string = 'frequency', minWordLength: number = 2, maxWords: number = 100): Promise<{ words: WordCloudWord[] }> {
         const textData = BytesEncoder.encodeText(text);
+        const methodData = BytesEncoder.encodeText(method);
         const minWordLengthData = BytesEncoder.encodeUint32(minWordLength);
         const maxWordsData = BytesEncoder.encodeUint32(maxWords);
 
-        const data = new Uint8Array(textData.length + minWordLengthData.length + maxWordsData.length);
+        const data = new Uint8Array(textData.length + methodData.length + minWordLengthData.length + maxWordsData.length);
         data.set(textData, 0);
-        data.set(minWordLengthData, textData.length);
-        data.set(maxWordsData, textData.length + minWordLengthData.length);
+        data.set(methodData, textData.length);
+        data.set(minWordLengthData, textData.length + methodData.length);
+        data.set(maxWordsData, textData.length + methodData.length + minWordLengthData.length);
 
         const response = await api.post('/word_cloud', data);
         return BytesEncoder.decodeResponse(response.data) as { words: WordCloudWord[] };
@@ -280,6 +284,7 @@ export const apiService = {
     // Matplotlib Word Cloud
     async createMatplotlibWordCloud(request: MatplotlibWordCloudRequest): Promise<MatplotlibWordCloudResponse> {
         const textData = BytesEncoder.encodeText(request.text);
+        const methodData = BytesEncoder.encodeText(request.method || 'frequency');
         const minWordLengthData = BytesEncoder.encodeUint32(request.min_word_length || 2);
         const maxWordsData = BytesEncoder.encodeUint32(request.max_words || 100);
         const widthData = BytesEncoder.encodeUint32(request.width || 2400);
@@ -302,6 +307,7 @@ export const apiService = {
 
         const data = new Uint8Array(
             textData.length +
+            methodData.length +
             minWordLengthData.length +
             maxWordsData.length +
             widthData.length +
@@ -321,6 +327,7 @@ export const apiService = {
 
         let offset = 0;
         data.set(textData, offset); offset += textData.length;
+        data.set(methodData, offset); offset += methodData.length;
         data.set(minWordLengthData, offset); offset += minWordLengthData.length;
         data.set(maxWordsData, offset); offset += maxWordsData.length;
         data.set(widthData, offset); offset += widthData.length;
