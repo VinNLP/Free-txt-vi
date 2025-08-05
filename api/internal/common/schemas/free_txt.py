@@ -1,10 +1,60 @@
 from typing import Optional, List
+import struct
+import json
+from io import BytesIO
 
 from pydantic import BaseModel, Field
 
 from internal.common.enums.free_txt import EnumSentimentLabel
 
 
+# Bytes-based schemas for faster processing
+class BytesRequest:
+    """Base class for bytes-based requests"""
+
+    @staticmethod
+    def encode_text(text: str) -> bytes:
+        """Encode text as bytes with length prefix"""
+        text_bytes = text.encode('utf-8')
+        length = len(text_bytes)
+        return struct.pack('>I', length) + text_bytes
+
+    @staticmethod
+    def decode_text(data: bytes) -> tuple[str, bytes]:
+        """Decode text from bytes with length prefix"""
+        if len(data) < 4:
+            raise ValueError("Insufficient data for length prefix")
+        length = struct.unpack('>I', data[:4])[0]
+        if len(data) < 4 + length:
+            raise ValueError("Insufficient data for text")
+        text = data[4:4+length].decode('utf-8')
+        return text, data[4+length:]
+
+
+class BytesResponse:
+    """Base class for bytes-based responses"""
+
+    @staticmethod
+    def encode_json_response(data: dict) -> bytes:
+        """Encode JSON response as bytes"""
+        json_str = json.dumps(data, ensure_ascii=False)
+        json_bytes = json_str.encode('utf-8')
+        length = len(json_bytes)
+        return struct.pack('>I', length) + json_bytes
+
+    @staticmethod
+    def decode_json_response(data: bytes) -> tuple[dict, bytes]:
+        """Decode JSON response from bytes"""
+        if len(data) < 4:
+            raise ValueError("Insufficient data for length prefix")
+        length = struct.unpack('>I', data[:4])[0]
+        if len(data) < 4 + length:
+            raise ValueError("Insufficient data for JSON")
+        json_str = data[4:4+length].decode('utf-8')
+        return json.loads(json_str), data[4+length:]
+
+
+# Original JSON-based schemas (keeping for backward compatibility)
 class MeaningAnalysisRequest(BaseModel):
     text: str = Field(description="Input text to analyze")
 

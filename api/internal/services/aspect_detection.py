@@ -5,6 +5,13 @@ import torch
 import os
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+from langdetect import detect, DetectorFactory
+import logging
+
+# Set seed for consistent language detection
+DetectorFactory.seed = 0
+
+logger = logging.getLogger(__name__)
 
 
 class AspectDetector:
@@ -73,23 +80,49 @@ class AspectDetector:
             }
         }
 
-    async def _initialize_aspect_embeddings(self):
-        """Initialize aspect embeddings once for faster detection"""
-        if self._aspect_embeddings is None:
+    def detect_language(self, text: str) -> str:
+        """
+        Detect the language of the input text using langdetect
+        Returns language code (e.g., 'en', 'vi', 'fr', etc.)
+        """
+        try:
+            # Clean the text for better language detection
+            cleaned_text = re.sub(r'[^\w\s]', '', text.strip())
+
+            # Need at least some text for detection
+            if len(cleaned_text) < 10:
+                logger.warning("Text too short for reliable language detection, defaulting to English")
+                return 'en'
+
+            detected_lang = detect(cleaned_text)
+            logger.info(f"Detected language: {detected_lang} for text: {text[:50]}...")
+            return detected_lang
+
+        except Exception as e:
+            logger.error(f"Language detection failed: {e}, defaulting to English")
+            return 'en'
+
+    async def _initialize_aspect_embeddings(self, language: str = 'en'):
+        """Initialize aspect embeddings for a specific language for faster detection"""
+        if self._aspect_embeddings is None or language not in getattr(self, '_aspect_embeddings_by_lang', {}):
             aspect_texts = []
             aspect_info = []
 
             for aspect_name, descriptions in self.aspect_descriptions.items():
-                # Add English description
-                aspect_texts.append(descriptions['en'])
-                aspect_info.append((aspect_name, 'en', descriptions['en']))
+                # Use the detected language, fallback to English if not available
+                lang_to_use = language if language in descriptions else 'en'
+                description = descriptions[lang_to_use]
 
-                # Add Vietnamese description
-                aspect_texts.append(descriptions['vi'])
-                aspect_info.append((aspect_name, 'vi', descriptions['vi']))
+                aspect_texts.append(description)
+                aspect_info.append((aspect_name, lang_to_use, description))
 
-            self._aspect_embeddings = await self.get_embeddings(aspect_texts)
-            self._aspect_info = aspect_info
+            embeddings = await self.get_embeddings(aspect_texts)
+
+            # Store embeddings by language
+            if not hasattr(self, '_aspect_embeddings_by_lang'):
+                self._aspect_embeddings_by_lang = {}
+            self._aspect_embeddings_by_lang[language] = embeddings
+            self._aspect_info_by_lang = aspect_info
 
     async def get_embeddings(self, texts: List[str]) -> np.ndarray:
         """
@@ -123,11 +156,19 @@ class AspectDetector:
     async def detect_aspects(self, text: str) -> List[Dict[str, Any]]:
         """
         Detect aspects in the given text using embedding similarity
-        Supports both English and Vietnamese text
+        First detects the language, then uses language-specific aspect descriptions
         Returns a list of detected aspects with their confidence scores
         """
-        # Initialize aspect embeddings if not done yet
-        await self._initialize_aspect_embeddings()
+        # Detect language first
+        detected_language = self.detect_language(text)
+        logger.info(f"Processing aspect detection for language: {detected_language}")
+
+        # Initialize aspect embeddings for the detected language
+        await self._initialize_aspect_embeddings(detected_language)
+
+        # Get embeddings for the detected language
+        aspect_embeddings = self._aspect_embeddings_by_lang[detected_language]
+        aspect_info = self._aspect_info_by_lang
 
         # Generate embedding for input text
         text_embedding = await self.get_embeddings([text])
@@ -135,59 +176,107 @@ class AspectDetector:
         detected_aspects = []
 
         # Calculate cosine similarity between text and each aspect description
-        similarities = cosine_similarity(text_embedding, self._aspect_embeddings)[0]
+        similarities = cosine_similarity(text_embedding, aspect_embeddings)[0]
 
-        # Group similarities by aspect (combine English and Vietnamese scores)
-        aspect_scores = {}
-        for i, (aspect_name, lang, description) in enumerate(self._aspect_info):
-            if aspect_name not in aspect_scores:
-                aspect_scores[aspect_name] = []
-            aspect_scores[aspect_name].append(similarities[i])
-
-        # Create aspect results with best confidence score (max of English and Vietnamese)
-        for aspect_name, scores in aspect_scores.items():
-            # Use the maximum confidence score between English and Vietnamese
-            confidence = float(max(scores))
+        # Create aspect results with confidence scores
+        for i, (aspect_name, lang, description) in enumerate(aspect_info):
+            confidence = float(similarities[i])
 
             # Only include aspects with confidence > 0.3
             if confidence > 0.3:
-                # Determine which language had the higher score
-                best_lang = 'en' if scores[0] > scores[1] else 'vi'
-                best_description = self.aspect_descriptions[aspect_name][best_lang]
-
                 detected_aspects.append({
                     'aspect': aspect_name,
                     'confidence': confidence,
                     'similarity_score': confidence,
-                    'description': best_description,
-                    'language': best_lang
+                    'description': description,
+                    'language': lang
                 })
 
         # Sort by confidence score (highest first)
         detected_aspects.sort(key=lambda x: x['confidence'], reverse=True)
 
+        logger.info(f"Detected {len(detected_aspects)} aspects for language {detected_language}")
         return detected_aspects
 
     async def get_aspect_summary_prompt(self, text: str, aspect: str, target_words: int) -> str:
         """
         Generate a prompt for aspect-based summarization with strict language requirements
         """
+        # Detect language for the prompt
+        detected_language = self.detect_language(text)
+
         aspect_descriptions = {
-            'technical': 'technical details, specifications, and implementation',
-            'business': 'business implications, market analysis, and commercial aspects',
-            'academic': 'research findings, methodology, and scholarly contributions',
-            'medical': 'medical information, health implications, and clinical aspects',
-            'legal': 'legal implications, regulatory aspects, and compliance issues',
-            'financial': 'financial implications, costs, and economic aspects',
-            'social': 'social implications, community impact, and human aspects',
-            'environmental': 'environmental impact, sustainability, and ecological aspects',
-            'political': 'political implications, policy aspects, and governance',
-            'scientific': 'scientific findings, research implications, and experimental aspects'
+            'technical': {
+                'en': 'technical details, specifications, and implementation',
+                'vi': 'chi tiết kỹ thuật, thông số kỹ thuật và triển khai'
+            },
+            'business': {
+                'en': 'business implications, market analysis, and commercial aspects',
+                'vi': 'tác động kinh doanh, phân tích thị trường và khía cạnh thương mại'
+            },
+            'academic': {
+                'en': 'research findings, methodology, and scholarly contributions',
+                'vi': 'kết quả nghiên cứu, phương pháp luận và đóng góp học thuật'
+            },
+            'medical': {
+                'en': 'medical information, health implications, and clinical aspects',
+                'vi': 'thông tin y tế, tác động sức khỏe và khía cạnh lâm sàng'
+            },
+            'legal': {
+                'en': 'legal implications, regulatory aspects, and compliance issues',
+                'vi': 'tác động pháp lý, khía cạnh quy định và vấn đề tuân thủ'
+            },
+            'financial': {
+                'en': 'financial implications, costs, and economic aspects',
+                'vi': 'tác động tài chính, chi phí và khía cạnh kinh tế'
+            },
+            'social': {
+                'en': 'social implications, community impact, and human aspects',
+                'vi': 'tác động xã hội, tác động cộng đồng và khía cạnh con người'
+            },
+            'environmental': {
+                'en': 'environmental impact, sustainability, and ecological aspects',
+                'vi': 'tác động môi trường, bền vững và khía cạnh sinh thái'
+            },
+            'political': {
+                'en': 'political implications, policy aspects, and governance',
+                'vi': 'tác động chính trị, khía cạnh chính sách và quản trị'
+            },
+            'scientific': {
+                'en': 'scientific findings, research implications, and experimental aspects',
+                'vi': 'phát hiện khoa học, tác động nghiên cứu và khía cạnh thực nghiệm'
+            }
         }
 
-        aspect_desc = aspect_descriptions.get(aspect, aspect)
+        # Get aspect description in the detected language
+        aspect_desc = aspect_descriptions.get(aspect, {}).get(detected_language, aspect)
 
-        return f"""You are an aspect-focused text summarization assistant. Your task is to summarize the given text focusing on a specific aspect.
+        # Create language-specific prompt
+        if detected_language == 'vi':
+            return f"""Bạn là trợ lý tóm tắt văn bản tập trung vào khía cạnh cụ thể. Nhiệm vụ của bạn là tóm tắt văn bản đã cho tập trung vào một khía cạnh cụ thể.
+
+QUY TẮC NGÔN NGỮ QUAN TRỌNG:
+- Bạn PHẢI trả về tóm tắt bằng ĐÚNG NGÔN NGỮ như văn bản đầu vào
+- Nếu đầu vào là tiếng Việt, chỉ trả lời bằng tiếng Việt
+- KHÔNG BAO GIỜ dịch hoặc thay đổi ngôn ngữ của câu trả lời
+
+TẬP TRUNG VÀO KHÍA CẠNH:
+- Tập trung cụ thể vào {aspect_desc}
+- Trích xuất và tóm tắt chỉ thông tin liên quan đến khía cạnh này
+- Bỏ qua nội dung không liên quan đến khía cạnh này
+- Duy trì ngôn ngữ gốc trong suốt
+
+NHIỆM VỤ:
+- Tóm tắt văn bản tập trung vào {aspect_desc}
+- Nhắm đến khoảng {target_words} từ
+- Duy trì ngôn ngữ gốc của văn bản đầu vào
+- Giữ tóm tắt mạch lạc và có cấu trúc tốt
+
+Văn bản đầu vào: {text}
+
+Nhớ: Trả lời bằng ĐÚNG NGÔN NGỮ như văn bản đầu vào. Chỉ tập trung vào {aspect_desc}."""
+        else:
+            return f"""You are an aspect-focused text summarization assistant. Your task is to summarize the given text focusing on a specific aspect.
 
 IMPORTANT LANGUAGE RULES:
 - You MUST return the summary in the EXACT SAME LANGUAGE as the input text
