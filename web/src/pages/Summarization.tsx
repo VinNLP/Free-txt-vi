@@ -146,7 +146,8 @@ export function Summarization() {
             'social': 'Xã hội',
             'environmental': 'Môi trường',
             'political': 'Chính trị',
-            'scientific': 'Khoa học'
+            'scientific': 'Khoa học',
+            'general': 'Tổng quát'
         };
         return displayNamesVi[aspect] || aspect;
     };
@@ -222,7 +223,7 @@ export function Summarization() {
                                                 : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                                         }`}
                                     >
-                                        General
+                                        {aspects[0]?.language === 'vi' ? 'Tổng quát' : 'General'}
                                     </button>
                                     {aspects.map((aspect) => (
                                         <button
