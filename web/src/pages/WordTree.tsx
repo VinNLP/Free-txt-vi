@@ -46,6 +46,7 @@ export function WordTree() {
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const tidyTreeRef = useRef<HTMLDivElement>(null);
+    const [containerWidth, setContainerWidth] = useState(1000);
 
     const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const words = e.target.value.split(/\s+/).filter(Boolean);
@@ -80,6 +81,30 @@ export function WordTree() {
             }
         }
     }, [text]);
+
+    // Update container width when component mounts or window resizes
+    useEffect(() => {
+        const updateWidth = () => {
+            if (tidyTreeRef.current) {
+                setContainerWidth(tidyTreeRef.current.clientWidth);
+            }
+        };
+
+        updateWidth();
+
+        // Use ResizeObserver for more reliable width detection
+        const resizeObserver = new ResizeObserver(updateWidth);
+        if (tidyTreeRef.current) {
+            resizeObserver.observe(tidyTreeRef.current);
+        }
+
+        window.addEventListener('resize', updateWidth);
+
+        return () => {
+            window.removeEventListener('resize', updateWidth);
+            resizeObserver.disconnect();
+        };
+    }, []);
 
     const handleGenerateTree = async (newKeyword?: string) => {
         const targetKeyword = newKeyword || keyword;
@@ -300,14 +325,16 @@ export function WordTree() {
                             </div>
                         </div>
                     </div>
-                    <div ref={tidyTreeRef} style={{ width: '100%', height: '800px' }}>
-                        <h3 className="text-lg font-semibold mb-2">Tidy Tree Layout</h3>
-                        <TidyTree
+                    <div ref={tidyTreeRef} className="relative overflow-hidden border border-gray-200 rounded-lg" style={{ width: '100%', height: '800px' }}>
+                        <h3 className="text-lg font-semibold mb-2 p-4">Tidy Tree Layout</h3>
+                        <div className="relative w-full h-full overflow-hidden" style={{ minHeight: '600px' }}>
+                                                    <TidyTree
                             data={d3TreeData}
-                            width={1000}
-                            height={800}
+                            width={Math.max(containerWidth, 800)}
+                            height={600}
                             onNodeClick={handleNodeClick}
                         />
+                        </div>
                     </div>
                 </div>
             )}
