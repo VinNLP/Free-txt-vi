@@ -35,7 +35,7 @@ const TidyTree: React.FC<TidyTreeProps> = ({ data, width = 1000, height = 800, o
         const treeLayout = d3.tree<TidyTreeNode>().nodeSize([60, 120]);
         const treeRoot = treeLayout(root);
 
-        // Find extents for centering
+        // Find extents for centering and scaling
         let minX = 0, maxX = 0, minY = 0, maxY = 0;
         treeRoot.each((d: d3.HierarchyPointNode<TidyTreeNode>) => {
             const x = d.x ?? 0;
@@ -45,8 +45,23 @@ const TidyTree: React.FC<TidyTreeProps> = ({ data, width = 1000, height = 800, o
             if (y < minY) minY = y;
             if (y > maxY) maxY = y;
         });
-        const xOffset = (width - (maxY - minY)) / 2 - minY;
-        const yOffset = (height - (maxX - minX)) / 2 - minX;
+
+        // Calculate tree dimensions
+        const treeWidth = maxY - minY;
+        const treeHeight = maxX - minX;
+
+        // Calculate scale to fit within container with padding
+        const padding = 40;
+        const availableWidth = Math.max(width - padding * 2, 100);
+        const availableHeight = Math.max(height - padding * 2, 100);
+
+        const scaleX = treeWidth > 0 ? availableWidth / treeWidth : 1;
+        const scaleY = treeHeight > 0 ? availableHeight / treeHeight : 1;
+        const scale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
+
+        // Calculate offsets for centering
+        const xOffset = (width - treeWidth * scale) / 2 - minY * scale;
+        const yOffset = (height - treeHeight * scale) / 2 - minX * scale;
 
         const svg = d3.select(svgRef.current)
             .attr('width', width)
@@ -54,13 +69,13 @@ const TidyTree: React.FC<TidyTreeProps> = ({ data, width = 1000, height = 800, o
             .style('background', '#f8fafc');
 
         const g = svg.append('g')
-            .attr('transform', `translate(${xOffset},${yOffset})`);
+            .attr('transform', `translate(${xOffset},${yOffset}) scale(${scale})`);
 
-        // Add zoom behavior
+        // Add zoom behavior with initial scale
         const zoom = d3.zoom<SVGSVGElement, unknown>()
             .scaleExtent([0.1, 3]) // Min zoom 0.1x, max zoom 3x
             .on('zoom', (event) => {
-                g.attr('transform', `translate(${event.transform.x + xOffset},${event.transform.y + yOffset}) scale(${event.transform.k})`);
+                g.attr('transform', `translate(${event.transform.x + xOffset},${event.transform.y + yOffset}) scale(${scale * event.transform.k})`);
             });
 
         svg.call(zoom);
