@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 
 export interface TidyTreeNode {
     name: string;
-    attributes?: Record<string, unknown>;
+    attributes?: { count?: number; contextType?: string; [key: string]: unknown };
     children?: TidyTreeNode[];
 }
 
@@ -107,17 +107,18 @@ const TidyTree: React.FC<TidyTreeProps> = ({ data, width = 1000, height = 800, o
 
         // Helper to determine node color
         function getNodeColor(d: d3.HierarchyPointNode<TidyTreeNode>): string {
-            if (!d.parent) return ROOT_COLOR;
-            // If direct child of root, use index to determine left/right
-            if (d.parent.depth === 0) {
-                // Assume left children come first, then right children
-                const leftCount = Math.floor((d.parent.children?.length ?? 0) / 2);
-                const idx = d.parent.children?.indexOf(d) ?? 0;
-                if (idx < leftCount) return LEFT_COLOR;
-                return RIGHT_COLOR;
+            const contextType = d.data.attributes?.contextType;
+
+            if (contextType === 'root') return ROOT_COLOR;
+            if (contextType === 'left') return LEFT_COLOR;
+            if (contextType === 'right') return RIGHT_COLOR;
+
+            // Fallback: if no contextType, inherit from parent
+            if (d.parent) {
+                return getNodeColor(d.parent);
             }
-            // Otherwise, inherit from parent
-            return getNodeColor(d.parent);
+
+            return ROOT_COLOR; // Default fallback
         }
 
         // Create tooltip

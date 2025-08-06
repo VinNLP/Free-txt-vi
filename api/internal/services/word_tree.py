@@ -3,7 +3,20 @@ from collections import defaultdict
 from typing import List, Dict
 import string
 import re
+from langdetect import detect
+import nltk
 from internal.services.vncorenlp_singleton import vncorenlp_model, process_text_with_vncorenlp, process_text_with_vncorenlp_safe
+
+# Download required NLTK data if not already present
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
+
+try:
+    nltk.data.find('tokenizers/punkt_tab')
+except LookupError:
+    nltk.download('punkt_tab')
 
 
 async def clean_word(word: str) -> str:
@@ -55,16 +68,61 @@ class WordTree:
     def __init__(self):
         self.model = vncorenlp_model
 
+    async def _detect_language(self, text: str) -> str:
+        """
+        Detect the language of the input text.
+        Returns 'vi' for Vietnamese, 'en' for English, or 'vi' as default.
+        """
+        try:
+            # Use a sample of the text for language detection
+            sample_text = text[:1000] if len(text) > 1000 else text
+            detected_lang = detect(sample_text)
+
+            # Map common language codes
+            if detected_lang in ['en']:
+                return 'en'
+            elif detected_lang in ['vi']:
+                return 'vi'
+            else:
+                # Default to Vietnamese for other languages since VnCoreNLP is available
+                return 'vi'
+        except:
+            # Default to Vietnamese if detection fails
+            return 'vi'
+
+    async def _process_english_text(self, text: str) -> List[str]:
+        """
+        Process English text using NLTK tokenization instead of VnCoreNLP.
+        """
+        # Use NLTK word tokenization for English
+        tokens = nltk.word_tokenize(text.lower())
+        return tokens
+
+    async def _process_vietnamese_text(self, text: str) -> List[str]:
+        """
+        Process Vietnamese text using VnCoreNLP.
+        """
+        return await process_text_with_vncorenlp_safe(text.lower())
+
     async def build_word_tree(self, text: str, keyword: str, window: int = 5):
-        seg_text = await process_text_with_vncorenlp_safe(text.lower())
-        # For keywords, we can use direct word_segment since they're typically short
-        seg_keyword = "".join(self.model.word_segment(keyword.lower()))
+        # Detect language
+        language = await self._detect_language(text)
 
-        # Clean the keyword
-        seg_keyword = await clean_word(seg_keyword)
+        # Process text based on detected language
+        if language == 'en':
+            # Use NLTK for English text processing
+            tokens = await self._process_english_text(text)
+            # For English, just clean the keyword without VnCoreNLP segmentation
+            seg_keyword = await clean_word(keyword.lower())
+        else:
+            # Use VnCoreNLP for Vietnamese and other languages
+            seg_text = await self._process_vietnamese_text(text)
+            tokens = " ".join(seg_text).split()
+            # For keywords, we can use direct word_segment since they're typically short
+            seg_keyword = "".join(self.model.word_segment(keyword.lower()))
+            # Clean the keyword
+            seg_keyword = await clean_word(seg_keyword)
 
-        mod_text = " ".join(seg_text)
-        tokens = mod_text.split()
         left_tree = WordTreeNode()
         right_tree = WordTreeNode()
         punctuation = set(string.punctuation)
