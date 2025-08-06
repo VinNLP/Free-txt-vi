@@ -64,8 +64,8 @@ export function WordCloud() {
                 min_word_length: 2, // Default to 2
                 max_words: 100, // Default to 100
                 shape: cloudShape,
-                width: 2400,  // Increased resolution
-                height: 1800,  // Increased resolution
+                width: 1200,  // Reduced resolution for better performance
+                height: 900,   // Reduced resolution for better performance
                 background_color: 'white',
                 colormap: 'viridis'
             });

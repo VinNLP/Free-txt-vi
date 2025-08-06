@@ -1,12 +1,8 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 import type { ParseResult } from 'papaparse';
 import { useInputText } from './useInputText';
-
-// Use a local worker file for Vite compatibility
-GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
 
 interface FileUploadToInputTextProps {
   setInputText: (text: string) => void;
@@ -144,28 +140,13 @@ const FileUploadToInputText: React.FC<FileUploadToInputTextProps> = ({ setInputT
         const { truncatedText, message } = truncateText(processedText, 1000);
         setInputText(truncatedText);
         setError(message);
-      } else if (ext === 'pdf') {
-        // PDF parsing
-        const arrayBuffer = await selectedFile.arrayBuffer();
-        const pdf = await getDocument({ data: arrayBuffer }).promise;
-        let text = '';
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          text += (content.items as { str: string }[]).map((item) => item.str).join(' ') + '\n';
-        }
-        console.log('PDF parsed text:', text);
-        const processedText = splitTextIntoSentences(text.trim());
-        const { truncatedText, message } = truncateText(processedText, 1000);
-        setInputText(truncatedText);
-        setError(message);
       } else if (ext === 'csv' || ext === 'xlsx' || ext === 'xls') {
         // CSV/Excel parsing with column selection
         const data = await processFileData(selectedFile);
         setColumnData(data);
         setShowColumnSelector(true);
       } else {
-        setError('Unsupported file type. Please upload PDF, CSV, Excel, or TXT files.');
+        setError('Unsupported file type. Please upload CSV, Excel, or TXT files.');
         console.error('Unsupported file type:', ext);
       }
     } catch (err: unknown) {
@@ -225,10 +206,10 @@ const FileUploadToInputText: React.FC<FileUploadToInputTextProps> = ({ setInputT
 
   return (
     <div className="mb-2">
-      <label className="block text-sm font-medium text-gray-700 mb-1">Upload PDF, CSV, Excel, or TXT file</label>
+      <label className="block text-sm font-medium text-gray-700 mb-1">Upload CSV, Excel, or TXT file</label>
       <input
         type="file"
-        accept=".pdf,.csv,.xlsx,.xls,.txt"
+        accept=".csv,.xlsx,.xls,.txt"
         onChange={handleFileChange}
         className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
       />
