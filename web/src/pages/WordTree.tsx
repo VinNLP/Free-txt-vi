@@ -9,10 +9,10 @@ import { downloadWordTree, downloadSVGAsSVG } from '../utils/downloadUtils';
 // Convert backend nested dict to react-d3-tree format
 interface D3TreeNode {
     name: string;
-    attributes?: { count?: number };
+    attributes?: { count?: number; contextType?: string };
     children?: D3TreeNode[];
 }
-function convertToD3Tree(node: unknown, maxLevel = 3, level = 0): D3TreeNode[] {
+function convertToD3Tree(node: unknown, maxLevel = 3, level = 0, contextType?: string): D3TreeNode[] {
     if (!node || typeof node !== 'object' || level > maxLevel) return [];
     const nodeObj = node as Record<string, unknown>;
     const children: D3TreeNode[] = [];
@@ -24,8 +24,8 @@ function convertToD3Tree(node: unknown, maxLevel = 3, level = 0): D3TreeNode[] {
         }
         children.push({
             name: key,
-            attributes: { count },
-            children: convertToD3Tree(value, maxLevel, level + 1),
+            attributes: { count, contextType },
+            children: convertToD3Tree(value, maxLevel, level + 1, contextType),
         });
     }
     return children;
@@ -136,11 +136,12 @@ export function WordTree() {
     // Prepare unified D3 tree data
     const d3TreeData = useMemo(() => {
         if (!treeData) return null;
-        const leftChildren = convertToD3Tree(treeData.left);
-        const rightChildren = convertToD3Tree(treeData.right);
+        const leftChildren = convertToD3Tree(treeData.left, 3, 0, 'left');
+        const rightChildren = convertToD3Tree(treeData.right, 3, 0, 'right');
+
         return [{
             name: treeData.word,
-            attributes: {},
+            attributes: { contextType: 'root' },
             children: [...leftChildren, ...rightChildren],
         }];
     }, [treeData]);
