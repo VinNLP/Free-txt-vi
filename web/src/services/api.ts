@@ -287,8 +287,8 @@ export const apiService = {
         const methodData = BytesEncoder.encodeText(request.method || 'frequency');
         const minWordLengthData = BytesEncoder.encodeUint32(request.min_word_length || 2);
         const maxWordsData = BytesEncoder.encodeUint32(request.max_words || 100);
-        const widthData = BytesEncoder.encodeUint32(request.width || 2400);
-        const heightData = BytesEncoder.encodeUint32(request.height || 1800);
+        const widthData = BytesEncoder.encodeUint32(request.width || 1200);
+        const heightData = BytesEncoder.encodeUint32(request.height || 900);
 
         // Encode shape parameter
         const shapeData = BytesEncoder.encodeText(request.shape || 'circle');
