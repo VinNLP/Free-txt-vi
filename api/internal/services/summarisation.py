@@ -32,8 +32,29 @@ class Summarizer:
                 },
             ]
         else:
-            # Use general summarization prompt
-            prompt = f"""You are a text summarization assistant. Your task is to summarize the given text.
+            # Detect the language of the input text
+            detected_language = self.aspect_detector.detect_language(input_text)
+
+            # Use language-specific general summarization prompt
+            if detected_language == 'vi':
+                prompt = f"""Bạn là trợ lý tóm tắt văn bản. Nhiệm vụ của bạn là tóm tắt văn bản đã cho.
+
+QUY TẮC NGÔN NGỮ QUAN TRỌNG:
+- Bạn PHẢI trả về tóm tắt bằng tiếng Việt
+- KHÔNG BAO GIỜ dịch sang tiếng Anh hoặc ngôn ngữ khác
+- Giữ nguyên ngôn ngữ tiếng Việt trong suốt câu trả lời
+
+NHIỆM VỤ:
+- Tóm tắt văn bản sau đây trong khoảng {target_words} từ
+- Tập trung vào thông tin quan trọng nhất
+- Giữ tóm tắt mạch lạc và có cấu trúc tốt
+- Sử dụng tiếng Việt tự nhiên và dễ hiểu
+
+Văn bản đầu vào: {input_text}
+
+Nhớ: Trả lời bằng tiếng Việt. Không dịch sang ngôn ngữ khác."""
+            else:
+                prompt = f"""You are a text summarization assistant. Your task is to summarize the given text.
 
 IMPORTANT LANGUAGE RULES:
 - You MUST return the summary in the EXACT SAME LANGUAGE as the input text
